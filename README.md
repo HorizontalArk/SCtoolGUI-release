@@ -13,18 +13,17 @@
 ## 動作環境
 
 - Windows 10 / 11
-- [.NET 10 SDK](https://dotnet.microsoft.com/) 以降（ソースからビルドする場合）
 
-## ビルドと実行
+## インストール
+
+[Releases](https://github.com/HorizontalArk/SCtoolGUI-release/releases) から最新の `Setup.exe` をダウンロードして実行してください。ユーザー領域にインストールされ、スタートメニューに登録されます。新しいバージョンが出た場合は、アプリ内の「更新」通知からワンクリックで更新できます。
+
+## ソースからビルドする場合
+
+[.NET 10 SDK](https://dotnet.microsoft.com/) 以降が必要です。
 
 ```
 dotnet build
-```
-
-ビルド後、以下の実行ファイルが生成されます。
-
-```
-bin\Debug\net10.0-windows\SCtoolGui.exe
 ```
 
 ## ライセンス
