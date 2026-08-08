@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq; 
 using System.Windows;
 using System.Windows.Threading;
+using Velopack;
 
 namespace SCtoolGui
 {
@@ -11,6 +12,8 @@ namespace SCtoolGui
     {
         private SettingsManager _settingsManager = new SettingsManager();
         private DispatcherTimer _statusTimer = new DispatcherTimer();
+        private readonly AppUpdateService _updateService = new AppUpdateService();
+        private UpdateInfo? _pendingUpdate;
 
         public MainWindow()
         {
@@ -139,31 +142,51 @@ namespace SCtoolGui
 
         private async void CheckUpdates()
         {
-            Log("アップデートを確認中...");
-            var status = await UpdateManager.GetUpdateStatusAsync();
-
-            if (status.HasUpdate) {
-                UpdateBanner.Visibility = Visibility.Visible;
-                Log($"【通知】{status.Reason} ボタンから更新できます。");
-            } else {
-                // 更新が無い場合も理由を出す（開発ブランチでスキップした場合など）
-                Log(status.Reason);
-            }
-        }
-
-        private void BtnUpdate_Click(object sender, RoutedEventArgs e)
-        {
-            // 作業中の変更を巻き込まないよう、実行前に安全性を確認する
-            string? blockedReason = UpdateManager.ValidateCanUpdate();
-            if (blockedReason != null)
+            // Velopack でインストールされていない（dev実行など）場合は更新確認しない。
+            if (!_updateService.IsInstalled)
             {
-                Log($"【中止】{blockedReason.Replace("\n", " ")}");
-                MessageBox.Show(blockedReason, "更新を中止しました", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Log("更新確認: インストール版ではないためスキップしました。");
                 return;
             }
 
-            try { UpdateManager.ExecuteUpdateAndRestart(); }
-            catch (Exception ex) { MessageBox.Show($"アップデート処理の開始に失敗しました:\n{ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error); }
+            Log("アップデートを確認中...");
+            try
+            {
+                _pendingUpdate = await _updateService.CheckAsync();
+                if (_pendingUpdate != null)
+                {
+                    UpdateBanner.Visibility = Visibility.Visible;
+                    Log("【通知】新しいアップデートがあります。ボタンから更新できます。");
+                }
+                else
+                {
+                    Log("アプリケーションは最新です。");
+                }
+            }
+            catch
+            {
+                // ネットワーク不通などは黙って諦める（起動を妨げない）。
+                Log("更新の確認に失敗しました（ネットワーク等）。");
+            }
+        }
+
+        private async void BtnUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            if (_pendingUpdate == null) return;
+
+            try
+            {
+                Log("アップデートをダウンロードして適用します...");
+                BtnUpdate.IsEnabled = false;
+                await _updateService.DownloadAndApplyAsync(_pendingUpdate);
+                // 成功時はここに戻らず再起動する。
+            }
+            catch (Exception ex)
+            {
+                BtnUpdate.IsEnabled = true;
+                MessageBox.Show($"アップデートに失敗しました:\n{ex.Message}", "エラー",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
