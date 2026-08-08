@@ -1,6 +1,4 @@
-# v* タグを push すると、単体exe化した SCtoolGui を ZIP にまとめて
-# GitHub Release として自動公開する。
-# （Velopack 移行作業中：この workflow は近く vpk ベースへ差し替え予定）
+# v* タグを push すると、Velopack でインストーラ一式を作って Release に公開する。
 name: Release
 
 on:
@@ -8,7 +6,6 @@ on:
     tags:
       - 'v*'
 
-# Release を作成するために書き込み権限が要る。
 permissions:
   contents: write
 
@@ -25,7 +22,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # タグ "v1.2.3" から先頭の v を外して "1.2.3" を得る（exeのバージョン刻印用）。
+      - name: vpk ツールを導入
+        run: dotnet tool install -g vpk
+
       - name: バージョン番号を算出
         id: ver
         shell: pwsh
@@ -33,29 +32,38 @@ jobs:
           $v = "${{ github.ref_name }}".TrimStart('v')
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
-      # 自己完結（.NET同梱）の単一ファイルとして発行する。
-      # WPF はトリミング非対応のため PublishTrimmed は付けない。
-      # shutter.mp3 はコンテンツファイルなので exe とは別に publish フォルダへ出力される。
-      - name: 発行（self-contained 単体exe）
+      # Velopack は単一ファイル化しない。フォルダ一式を発行する。
+      - name: 発行（self-contained フォルダ）
         run: >
           dotnet publish SCtoolGui.csproj
           -c Release
           -r win-x64
           --self-contained true
-          -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
-          -p:DebugType=none
           -p:Version=${{ steps.ver.outputs.version }}
           -o publish
 
-      # exe と shutter.mp3 を同じ階層に含めて ZIP 化する。
-      # 展開先フォルダが BaseDirectory になり、設定ファイルもそこに保存される。
-      - name: ZIP にまとめる
-        shell: pwsh
-        run: Compress-Archive -Path publish\* -DestinationPath "SCtoolGui-${{ github.ref_name }}-win-x64.zip"
+      # 既存リリースを取得しておくと、差分パッケージが生成される（初回は何も無くてOK）。
+      - name: 既存リリースを取得（差分の土台）
+        run: >
+          vpk download github
+          --repoUrl https://github.com/HorizontalArk/SCtoolGUI-release
+          --token ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
-      - name: Release を作成してアップロード
-        uses: softprops/action-gh-release@v2
-        with:
-          files: SCtoolGui-${{ github.ref_name }}-win-x64.zip
-          generate_release_notes: true
+      - name: Velopack パッケージを作成
+        run: >
+          vpk pack
+          --packId SCtoolGui
+          --packVersion ${{ steps.ver.outputs.version }}
+          --packDir publish
+          --mainExe SCtoolGui.exe
+          --packTitle SCtoolGui
+
+      - name: GitHub Release へ公開
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/HorizontalArk/SCtoolGUI-release
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --tag ${{ github.ref_name }}
+          --releaseName ${{ github.ref_name }}
+          --publish
