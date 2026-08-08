@@ -1,0 +1,32 @@
+<Window x:Class="SCtoolGui.RenameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="呼び名の変更" Height="200" Width="420"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        ShowInTaskbar="False" Background="#F3F3F3">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Foreground="#444"
+                   Text="一覧の表示と保存フォルダ名に使う呼び名です。アプリ側でウィンドウ名が変わっても、この名前は変わりません。"/>
+
+        <TextBox x:Name="TxtName" Grid.Row="1" Margin="0,12,0,0" Padding="4"
+                 VerticalContentAlignment="Center" FontSize="14"
+                 KeyDown="TxtName_KeyDown"/>
+
+        <TextBlock x:Name="TxtError" Grid.Row="2" Margin="0,6,0,0" Foreground="#C00000"
+                   Visibility="Collapsed" TextWrapping="Wrap"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Content="既定に戻す" Width="90" Height="28" Margin="0,0,8,0" Click="BtnReset_Click"
+                    ToolTip="実行ファイル名を元にした既定の呼び名に戻します"/>
+            <Button Content="OK" Width="80" Height="28" Margin="0,0,8,0" IsDefault="True" Click="BtnOk_Click"/>
+            <Button Content="キャンセル" Width="80" Height="28" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

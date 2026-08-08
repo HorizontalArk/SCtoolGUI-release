@@ -1,0 +1,150 @@
+<Window x:Class="SCtoolGui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SCtool" Height="650" Width="800" MinWidth="700" MinHeight="450" Background="#F3F3F3"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/> <RowDefinition Height="*"/>    </Grid.RowDefinitions>
+
+        <Border x:Name="UpdateBanner" Grid.Row="0" Background="#FFF3CD" BorderBrush="#FFEEBA" BorderThickness="1" CornerRadius="5" Margin="0,0,0,10" Padding="10,5" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="⚠ 新しいアップデートがあります。" VerticalAlignment="Center" Foreground="#856404" FontWeight="Bold"/>
+                <Button x:Name="BtnUpdate" Content="アップデートして再起動" Grid.Column="1" Padding="15,5" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="BtnUpdate_Click"/>
+            </Grid>
+        </Border>
+
+        <GroupBox Header="ウィンドウ指定" Grid.Row="1" Margin="0,0,0,10" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/> 
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <DockPanel Grid.Row="0" Grid.Column="0" Margin="10,0">
+                    <Button x:Name="BtnRenameTarget" DockPanel.Dock="Right" Content="名前変更" Padding="8,2" Margin="5,0,0,0"
+                            Click="BtnRenameTarget_Click"
+                            ToolTip="このアプリの呼び名を変更します&#x0a;保存フォルダ名にも使われます"/>
+                    <ComboBox x:Name="CmbWindows" DisplayMemberPath="Title" DropDownOpened="CmbWindows_DropDownOpened"
+                              ToolTip="キャプチャ対象のウィンドウを選択します"/>
+                </DockPanel>
+
+                <CheckBox x:Name="ChkAlwaysOnTop" Grid.Row="0" Grid.Column="1" Content="最前面固定" VerticalAlignment="Center" Click="ChkAlwaysOnTop_Click"
+                          ToolTip="選択したウィンドウを常に他の画面より手前に表示します"/>
+        
+                <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <CheckBox x:Name="ChkCutTab" Content="上部カット:" VerticalAlignment="Center" Margin="0,0,5,0" IsChecked="False" Click="ChkCutTab_Click" 
+                              ToolTip="キャプチャ時に画像の上部を指定ピクセル分カットして保存します"/>
+                    
+                    <TextBox x:Name="TxtTopCut" Text="35" Width="35" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" 
+                             PreviewMouseWheel="TxtTopCut_PreviewMouseWheel" TextChanged="TxtTopCut_TextChanged" MouseDoubleClick="TxtTopCut_MouseDoubleClick"
+                             ToolTip="カットするピクセル数&#x0a;・ホイール回転で増減&#x0a;・ダブルクリックで 0 にリセット"/>
+                    <TextBlock Text="px" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock x:Name="TxtWindowStatus" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,10,0,0" FontWeight="Bold" Foreground="Gray" Text="ウィンドウ状態: 取得中..."/>
+                
+                <TextBlock x:Name="TxtCurrentSavePath" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,5,0,0" Foreground="#005A9E" TextWrapping="Wrap" Text="現在の保存先: "/>
+            </Grid>
+        </GroupBox>
+
+        <Grid Grid.Row="2" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BtnSettings" Content="⚙ 詳細設定" Grid.Column="0" Width="100" Height="50" Margin="0,0,10,0" Click="BtnSettings_Click" 
+                    ToolTip="ホットキーや保存先などの詳細設定を開きます"/>
+            <Button x:Name="BtnOpenFolder" Content="📁 フォルダ" Grid.Column="1" Width="100" Height="50" Margin="0,0,10,0" Click="BtnOpenFolder_Click" 
+                    ToolTip="画像の保存先フォルダをエクスプローラーで開きます"/>
+            <Button x:Name="BtnCapture" Grid.Column="2" Height="50" FontSize="16" FontWeight="Bold" Background="#007ACC" Foreground="White" Click="BtnCapture_Click" 
+                    ToolTip="選択中のウィンドウのスクリーンショットを撮影・保存します">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="5"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" MinWidth="150"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+            
+            <GroupBox Header="実行ログ" Grid.Column="0" Padding="5" Margin="0,0,5,0">
+                <TextBox x:Name="TxtLog" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" FontSize="11" Background="Black" Foreground="#00FF00"/>
+            </GroupBox>
+
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#CCC" Cursor="SizeWE"/>
+
+            <GroupBox Header="プレビュー" Grid.Column="2" Padding="5" Background="White" Margin="5,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid Grid.Row="0" Margin="0,0,0,5">
+                        
+                        <Viewbox Stretch="Uniform">
+                            <Grid x:Name="PreviewContentGrid" Background="Transparent" 
+                                  MouseWheel="PreviewContentGrid_MouseWheel" 
+                                  MouseLeftButtonDown="PreviewContentGrid_MouseLeftButtonDown"
+                                  MouseLeftButtonUp="PreviewContentGrid_MouseLeftButtonUp"
+                                  MouseMove="PreviewContentGrid_MouseMove">
+                                
+                                <Image x:Name="ImgPreview" Stretch="None" SizeChanged="ImgPreview_SizeChanged"/>
+                                
+                                <Rectangle x:Name="CutOverlayRect" Fill="#80FF0000" VerticalAlignment="Top" HorizontalAlignment="Stretch" Visibility="Collapsed" IsHitTestVisible="False"/>
+                                
+                                <Canvas IsHitTestVisible="False">
+                                    <Line x:Name="CutBoundaryLine" StrokeThickness="1" SnapsToDevicePixels="True" Y1="0" Y2="0" Visibility="Collapsed" IsHitTestVisible="False">
+                                        <Line.Stroke>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="Transparent" Offset="0.0"/>
+                                                <GradientStop Color="#333333" Offset="0.1"/>
+                                                <GradientStop Color="#333333" Offset="0.9"/>
+                                                <GradientStop Color="Transparent" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Line.Stroke>
+                                    </Line>
+                                </Canvas>
+                            </Grid>
+                        </Viewbox>
+
+                        <Border x:Name="PreviewWatermarkBorder" 
+                                VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10" 
+                                Background="#80000000" CornerRadius="12" Padding="12,5" 
+                                IsHitTestVisible="False" Visibility="Collapsed">
+                            <TextBlock Text="一時プレビュー (未保存)" FontSize="12" FontWeight="Normal" Foreground="#F0F0F0"/>
+                        </Border>
+                        
+                        <TextBlock x:Name="TxtDeleteMessage" Text="🗑 画像を削除しました" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="Gray" Visibility="Collapsed"/>
+                    </Grid>
+                    
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button x:Name="BtnRefreshPreview" Content="🔄 更新" Padding="10,5" Margin="0,0,20,0" Click="BtnRefreshPreview_Click" ToolTip="現在のウィンドウの最新状態を一時プレビューとして再取得します"/>
+                        
+                        <Button x:Name="BtnOpenFile" Content="📂 開く" Padding="10,5" Margin="0,0,5,0" IsEnabled="False" Click="BtnOpenFile_Click" ToolTip="最後に保存した画像を既定のアプリで開きます" ToolTipService.ShowOnDisabled="True"/>
+                        <Button x:Name="BtnCopyClipboard" Content="📋 クリップボードにコピー" Padding="10,5" Margin="0,0,5,0" IsEnabled="False" Click="BtnCopyClipboard_Click" ToolTip="最後に保存した画像をクリップボードにコピーします" ToolTipService.ShowOnDisabled="True"/>
+                        <Button x:Name="BtnDeleteFile" Content="🗑 削除" Padding="10,5" Background="#F8D7DA" Foreground="#721C24" IsEnabled="False" Click="BtnDeleteFile_Click" ToolTip="最後に保存した画像をPCから完全に削除します" ToolTipService.ShowOnDisabled="True"/>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Grid>
+</Window>

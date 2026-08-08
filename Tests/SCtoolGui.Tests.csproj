@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    テスト対象のロジックはWin32やWPFに依存しないため、WPFプロジェクトを参照せず
+    ソースをリンクして取り込む。これによりテストは net10.0 のまま高速に動く。
+  -->
+  <ItemGroup>
+    <Compile Include="..\WindowMatcher.cs" Link="Source\WindowMatcher.cs" />
+    <Compile Include="..\TargetInfo.cs" Link="Source\TargetInfo.cs" />
+    <Compile Include="..\SettingsManager.cs" Link="Source\SettingsManager.cs" />
+  </ItemGroup>
+
+</Project>
