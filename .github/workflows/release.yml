@@ -2,10 +2,6 @@
 # GitHub Release として自動公開する。
 name: Release
 
-# v* タグを push すると、単体exe化した SCtoolGui を ZIP にまとめて
-# GitHub Release として自動公開する。
-name: Release
-
 on:
   push:
     tags:
