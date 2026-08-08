@@ -39,7 +39,32 @@ namespace SCtoolGui
 
     public class SettingsManager
     {
-        private readonly string _settingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cut_settings.json");
+        private readonly string _settingsFile = ResolveSettingsFile(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppDomain.CurrentDomain.BaseDirectory);
+
+        /// <summary>
+        /// 設定ファイルの保存先を決める。Velopackはバージョンごとに別フォルダへ
+        /// インストールするため、exe隣ではなく %AppData%\SCtoolGui に置く。
+        /// 旧位置（exe隣）に設定が在れば一度だけ移行する。
+        /// </summary>
+        public static string ResolveSettingsFile(string appDataRoot, string legacyDir)
+        {
+            string dir = Path.Combine(appDataRoot, "SCtoolGui");
+            Directory.CreateDirectory(dir);
+            string newPath = Path.Combine(dir, "cut_settings.json");
+
+            if (!File.Exists(newPath))
+            {
+                string legacy = Path.Combine(legacyDir, "cut_settings.json");
+                if (File.Exists(legacy))
+                {
+                    try { File.Copy(legacy, newPath); } catch { }
+                }
+            }
+            return newPath;
+        }
+
         public AppSettings Current { get; private set; }
 
         public SettingsManager()
