@@ -1,0 +1,64 @@
+# v* タグを push すると、単体exe化した SCtoolGui を ZIP にまとめて
+# GitHub Release として自動公開する。
+name: Release
+
+# v* タグを push すると、単体exe化した SCtoolGui を ZIP にまとめて
+# GitHub Release として自動公開する。
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Release を作成するために書き込み権限が要る。
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: リポジトリを取得
+        uses: actions/checkout@v4
+
+      - name: .NET SDK をセットアップ
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # タグ "v1.2.3" から先頭の v を外して "1.2.3" を得る（exeのバージョン刻印用）。
+      - name: バージョン番号を算出
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      # 自己完結（.NET同梱）の単一ファイルとして発行する。
+      # WPF はトリミング非対応のため PublishTrimmed は付けない。
+      # shutter.mp3 はコンテンツファイルなので exe とは別に publish フォルダへ出力される。
+      - name: 発行（self-contained 単体exe）
+        run: >
+          dotnet publish SCtoolGui.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=none
+          -p:Version=${{ steps.ver.outputs.version }}
+          -o publish
+
+      # exe と shutter.mp3 を同じ階層に含めて ZIP 化する。
+      # 展開先フォルダが BaseDirectory になり、設定ファイルもそこに保存される。
+      - name: ZIP にまとめる
+        shell: pwsh
+        run: Compress-Archive -Path publish\* -DestinationPath "SCtoolGui-${{ github.ref_name }}-win-x64.zip"
+
+      - name: Release を作成してアップロード
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SCtoolGui-${{ github.ref_name }}-win-x64.zip
+          generate_release_notes: true
