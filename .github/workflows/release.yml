@@ -1,5 +1,6 @@
 # v* タグを push すると、単体exe化した SCtoolGui を ZIP にまとめて
 # GitHub Release として自動公開する。
+# （Velopack 移行作業中：この workflow は近く vpk ベースへ差し替え予定）
 name: Release
 
 on:
