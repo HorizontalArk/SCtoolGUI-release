@@ -6,11 +6,21 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <ApplicationManifest>app.manifest</ApplicationManifest> 
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WPF自動生成のMainではなく、Velopackフックを先に走らせるProgram.Mainを使う -->
+    <StartupObject>SCtoolGui.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <!-- App.xaml を ApplicationDefinition から Page に変更する。
+       WPF に Main を自動生成させず、Program.Main を唯一のエントリポイントにするため。
+       InitializeComponent は Page 扱いでも生成されるので App のリソース読込は従来どおり。 -->
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <!-- テストプロジェクトは独立してビルドするため、本体のコンパイル対象から除外する -->
@@ -24,6 +34,10 @@
     <None Update="shutter.mp3">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
 </Project>
