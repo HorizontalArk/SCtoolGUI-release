@@ -127,9 +127,14 @@ namespace SCtoolGui
                     if (answer == MessageBoxResult.Yes)
                     {
                         _settingsManager.Save();
+                        SingleInstance.Release();
                         if (ProcessElevation.RelaunchAsAdmin())
                         {
                             Application.Current.Shutdown();
+                        }
+                        else
+                        {
+                            SingleInstance.TryAcquire();
                         }
                     }
                 }

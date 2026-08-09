@@ -27,6 +27,7 @@
     <Compile Include="..\TargetInfo.cs" Link="Source\TargetInfo.cs" />
     <Compile Include="..\SettingsManager.cs" Link="Source\SettingsManager.cs" />
     <Compile Include="..\ProcessElevation.cs" Link="Source\ProcessElevation.cs" />
+    <Compile Include="..\FileNameUtil.cs" Link="Source\FileNameUtil.cs" />
   </ItemGroup>
 
 </Project>

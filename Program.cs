@@ -20,6 +20,7 @@ namespace SCtoolGui
             VelopackApp.Build().Run();
 
             // 「常に管理者として起動」が有効なら、非管理者時に昇格して起動し直す。
+            // 単一起動ガード(Mutex)より前に行うことで、昇格再起動時の取り合いを避ける。
             // 設定が読めなくても通常起動は続ける。
             try
             {
@@ -31,6 +32,13 @@ namespace SCtoolGui
                 }
             }
             catch { }
+
+            // 多重起動を防ぐ。既に起動していれば、そのウィンドウを前面に出して終了する。
+            if (!SingleInstance.TryAcquire())
+            {
+                SingleInstance.ActivateExisting();
+                return;
+            }
 
             var app = new App();
             app.InitializeComponent();

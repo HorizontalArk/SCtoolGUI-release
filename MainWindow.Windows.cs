@@ -97,13 +97,16 @@ namespace SCtoolGui
                 _settingsManager.Current.LastSelectedWindow = selected.Title;
                 _settingsManager.Save();
 
+                // 昇格インスタンスが単一起動ガードを取得できるよう、先に手放す。
+                SingleInstance.Release();
                 if (ProcessElevation.RelaunchAsAdmin())
                 {
                     Application.Current.Shutdown();
                     return false;
                 }
 
-                // 昇格をキャンセルされた → 通常権限のまま選択を続行する
+                // 昇格をキャンセルされた → ガードを取り直し、通常権限のまま選択を続行する
+                SingleInstance.TryAcquire();
                 Log("管理者としての再起動をキャンセルしました。通常権限のまま続行します。");
                 return true;
             }
@@ -369,15 +372,6 @@ namespace SCtoolGui
             }
         }
 
-        private string GetSafeFileName(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return "Unknown";
-            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-            foreach (char c in invalidChars)
-            {
-                name = name.Replace(c.ToString(), "_");
-            }
-            return name;
-        }
+        private string GetSafeFileName(string name) => FileNameUtil.ToSafeName(name);
     }
 }

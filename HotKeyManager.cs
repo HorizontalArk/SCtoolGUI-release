@@ -18,6 +18,9 @@ namespace SCtoolGui
 
         public event Action? OnHotKeyPressed;
 
+        /// <summary>ホットキーの登録に成功したか。他アプリに取られていると false になる。</summary>
+        public bool IsRegistered { get; private set; }
+
         public HotKeyManager(Window window, uint modifiers, uint key)
         {
             var helper = new WindowInteropHelper(window);
@@ -26,7 +29,8 @@ namespace SCtoolGui
             _source = HwndSource.FromHwnd(_handle);
             _source.AddHook(HwndHook);
 
-            RegisterHotKey(_handle, HOTKEY_ID, modifiers, key);
+            // RegisterHotKey は失敗しても例外を投げず false を返すため、戻り値で成否を保持する。
+            IsRegistered = RegisterHotKey(_handle, HOTKEY_ID, modifiers, key);
         }
 
         private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

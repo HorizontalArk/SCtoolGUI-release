@@ -31,9 +31,14 @@ namespace SCtoolGui
         private void RegisterHotKey()
         {
             if (_hotKeyManager != null) { _hotKeyManager.OnHotKeyPressed -= ExecuteCapture; _hotKeyManager.Dispose(); }
-            try { 
-                _hotKeyManager = new HotKeyManager(this, _settingsManager.Current.HotkeyModifiers, _settingsManager.Current.HotkeyKey); 
-                _hotKeyManager.OnHotKeyPressed += ExecuteCapture; 
+            try {
+                _hotKeyManager = new HotKeyManager(this, _settingsManager.Current.HotkeyModifiers, _settingsManager.Current.HotkeyKey);
+                _hotKeyManager.OnHotKeyPressed += ExecuteCapture;
+
+                if (!_hotKeyManager.IsRegistered)
+                {
+                    Log("【警告】ホットキーを登録できませんでした。他のアプリに使われている可能性があります。詳細設定で別のキーに変更してください。");
+                }
             }
             catch { Log("【警告】ホットキーの登録に失敗しました。"); }
         }
