@@ -42,6 +42,18 @@
                 </ComboBox>
             </StackPanel>
 
+            <TextBlock Text="アイコン（空欄で既定）:" Margin="0,0,0,5"/>
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="TxtIconPath" Grid.Column="0" VerticalContentAlignment="Center" Padding="5" IsReadOnly="True"/>
+                <Button Grid.Column="1" Content="参照..." Margin="5,0,0,0" Padding="10,0" Click="BtnBrowseIcon_Click"/>
+                <Button Grid.Column="2" Content="クリア" Margin="5,0,0,0" Padding="10,0" Click="BtnClearIcon_Click"/>
+            </Grid>
+
             <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
                 <CheckBox x:Name="ChkPlayShutterSound" Content="シャッター音を鳴らす" VerticalAlignment="Center" Margin="0,0,15,0"/>
                 <TextBlock Text="音量:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="Gray"/>

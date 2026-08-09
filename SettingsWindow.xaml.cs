@@ -21,7 +21,9 @@ namespace SCtoolGui
 
         public string ResultTheme { get; private set; } = "System";
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme)
+        public string ResultIconPath { get; private set; } = "";
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -48,6 +50,26 @@ namespace SCtoolGui
             ChkAlwaysRunAsAdmin.IsChecked = alwaysRunAsAdmin;
 
             CmbTheme.SelectedIndex = theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
+
+            TxtIconPath.Text = iconPath;
+        }
+
+        private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "アイコン画像を選択してください",
+                Filter = "画像ファイル (*.ico;*.png;*.jpg;*.jpeg;*.bmp)|*.ico;*.png;*.jpg;*.jpeg;*.bmp|すべてのファイル (*.*)|*.*",
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                TxtIconPath.Text = dialog.FileName;
+            }
+        }
+
+        private void BtnClearIcon_Click(object sender, RoutedEventArgs e)
+        {
+            TxtIconPath.Text = "";
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
@@ -97,6 +119,8 @@ namespace SCtoolGui
             ResultAlwaysRunAsAdmin = ChkAlwaysRunAsAdmin.IsChecked == true;
 
             ResultTheme = CmbTheme.SelectedIndex switch { 1 => "Light", 2 => "Dark", _ => "System" };
+
+            ResultIconPath = TxtIconPath.Text;
 
             this.DialogResult = true;
         }

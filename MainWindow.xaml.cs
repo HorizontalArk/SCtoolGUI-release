@@ -20,6 +20,7 @@ namespace SCtoolGui
             InitializeComponent();
             _settingsManager.Load();
             ThemeManager.Apply(_settingsManager.Current.Theme);
+            ApplyWindowIcon();
 
             if (_settingsManager.Current.WindowLeft.HasValue && _settingsManager.Current.WindowTop.HasValue)
             {
@@ -77,6 +78,20 @@ namespace SCtoolGui
             }
         }
 
+        /// <summary>設定のアイコン画像パスを Window.Icon に反映する。空/不正なら埋め込み既定に戻す。</summary>
+        private void ApplyWindowIcon()
+        {
+            string path = _settingsManager.Current.IconPath;
+            try
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    this.Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri(path));
+                else
+                    this.Icon = null; // 埋め込み既定に戻す
+            }
+            catch { this.Icon = null; }
+        }
+
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
         {
             bool wasAlwaysAdmin = _settingsManager.Current.AlwaysRunAsAdmin;
@@ -93,7 +108,8 @@ namespace SCtoolGui
                 _settingsManager.Current.PlayShutterSound,
                 _settingsManager.Current.ShutterVolume,
                 _settingsManager.Current.AlwaysRunAsAdmin,
-                _settingsManager.Current.Theme) { Owner = this };
+                _settingsManager.Current.Theme,
+                _settingsManager.Current.IconPath) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -112,6 +128,9 @@ namespace SCtoolGui
 
                 _settingsManager.Current.Theme = settingsWin.ResultTheme;
                 ThemeManager.Apply(_settingsManager.Current.Theme);
+
+                _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
+                ApplyWindowIcon();
 
                 this.Topmost = _settingsManager.Current.AppTopmost;
 

@@ -41,6 +41,9 @@ namespace SCtoolGui
 
         /// <summary>UIテーマ。"System"（OS追従）/ "Light" / "Dark"。</summary>
         public string Theme { get; set; } = "System";
+
+        /// <summary>ユーザー指定のウィンドウアイコン画像パス。空なら埋め込み既定を使う。</summary>
+        public string IconPath { get; set; } = "";
     }
 
     public class SettingsManager
