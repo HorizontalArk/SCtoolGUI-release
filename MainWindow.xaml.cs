@@ -78,17 +78,20 @@ namespace SCtoolGui
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
         {
+            bool wasAlwaysAdmin = _settingsManager.Current.AlwaysRunAsAdmin;
+
             // ★引数に _settingsManager.Current.ShutterVolume を追加
             var settingsWin = new SettingsWindow(
-                _settingsManager.Current.SaveDirectory, 
-                _settingsManager.Current.HotkeyModifiers, 
+                _settingsManager.Current.SaveDirectory,
+                _settingsManager.Current.HotkeyModifiers,
                 _settingsManager.Current.HotkeyKey,
                 _settingsManager.Current.AppTopmost,
                 _settingsManager.Current.SaveInWindowNameFolder,
                 _settingsManager.Current.ResetSettingsOnWindowChange,
                 _settingsManager.Current.AutoCopyClipboard,
                 _settingsManager.Current.PlayShutterSound,
-                _settingsManager.Current.ShutterVolume) { Owner = this }; 
+                _settingsManager.Current.ShutterVolume,
+                _settingsManager.Current.AlwaysRunAsAdmin) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -102,14 +105,34 @@ namespace SCtoolGui
                 
                 // ★結果を受け取る
                 _settingsManager.Current.ShutterVolume = settingsWin.ResultShutterVolume;
-                
+
+                _settingsManager.Current.AlwaysRunAsAdmin = settingsWin.ResultAlwaysRunAsAdmin;
+
                 this.Topmost = _settingsManager.Current.AppTopmost;
 
                 SaveAndLog("詳細設定を更新しました。");
                 RegisterHotKey();
                 UpdateButtonText();
-                
+
                 UpdateCurrentSavePathDisplay();
+
+                // 「常に管理者として起動」を新たにONにした場合は、今すぐ再起動するか確認する。
+                if (_settingsManager.Current.AlwaysRunAsAdmin && !wasAlwaysAdmin
+                    && !ProcessElevation.IsCurrentProcessElevated())
+                {
+                    var answer = MessageBox.Show(
+                        "設定を反映するには管理者として再起動する必要があります。\n今すぐ再起動しますか？",
+                        "管理者として再起動",
+                        MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (answer == MessageBoxResult.Yes)
+                    {
+                        _settingsManager.Save();
+                        if (ProcessElevation.RelaunchAsAdmin())
+                        {
+                            Application.Current.Shutdown();
+                        }
+                    }
+                }
             }
             else {
                 Log("詳細設定の変更をキャンセルしました。");

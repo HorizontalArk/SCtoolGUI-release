@@ -34,7 +34,10 @@ namespace SCtoolGui
         
         public bool PlayShutterSound { get; set; } = true;
         // ★追加: シャッター音量 (0.0 ～ 1.0)
-        public double ShutterVolume { get; set; } = 1.0; 
+        public double ShutterVolume { get; set; } = 1.0;
+
+        /// <summary>常に管理者として起動するか。管理者権限のアプリを常用する人向け。</summary>
+        public bool AlwaysRunAsAdmin { get; set; } = false;
     }
 
     public class SettingsManager

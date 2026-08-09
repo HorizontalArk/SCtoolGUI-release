@@ -17,7 +17,9 @@ namespace SCtoolGui
         // ★追加: 音量の結果を受け渡すプロパティ
         public double ResultShutterVolume { get; private set; }
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume)
+        public bool ResultAlwaysRunAsAdmin { get; private set; }
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -40,6 +42,8 @@ namespace SCtoolGui
             
             // ★追加: 0.0〜1.0 の音量を 0〜100 に変換してスライダーにセット
             SldVolume.Value = shutterVolume * 100;
+
+            ChkAlwaysRunAsAdmin.IsChecked = alwaysRunAsAdmin;
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
@@ -85,6 +89,8 @@ namespace SCtoolGui
             
             // ★追加: スライダーの 0〜100 を 0.0〜1.0 に戻して保存
             ResultShutterVolume = SldVolume.Value / 100.0;
+
+            ResultAlwaysRunAsAdmin = ChkAlwaysRunAsAdmin.IsChecked == true;
 
             this.DialogResult = true;
         }

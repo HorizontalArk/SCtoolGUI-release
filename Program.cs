@@ -19,6 +19,19 @@ namespace SCtoolGui
         {
             VelopackApp.Build().Run();
 
+            // 「常に管理者として起動」が有効なら、非管理者時に昇格して起動し直す。
+            // 設定が読めなくても通常起動は続ける。
+            try
+            {
+                var settings = new SettingsManager();
+                settings.Load();
+                if (settings.Current.AlwaysRunAsAdmin && !ProcessElevation.IsCurrentProcessElevated())
+                {
+                    if (ProcessElevation.RelaunchAsAdmin()) return;
+                }
+            }
+            catch { }
+
             var app = new App();
             app.InitializeComponent();
             app.Run();
