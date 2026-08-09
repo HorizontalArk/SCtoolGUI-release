@@ -74,6 +74,53 @@ namespace SCtoolGui
             Log("ウィンドウ一覧を更新しました。");
         }
 
+        /// <summary>
+        /// 管理者権限で動く対象を選んだ時に、昇格するか確認する。
+        /// 「はい」で管理者として再起動（この後アプリは終了）、「いいえ」で選択を元の対象に戻す。
+        /// 戻り値 true = そのまま通常権限で選択を続行してよい / false = 中断（呼び出し側は return する）。
+        /// </summary>
+        private bool ConfirmAndElevateForTarget(WindowItem selected, SelectionChangedEventArgs e)
+        {
+            var answer = MessageBox.Show(
+                $"[{selected.Title}] は管理者権限で動作しています。\n" +
+                "最前面固定などを使うには、SCtool を管理者として再起動する必要があります。\n\n" +
+                "管理者として再起動しますか？",
+                "管理者権限が必要です",
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (answer == MessageBoxResult.Yes)
+            {
+                // 昇格後にも同じ対象を復元できるよう、先に登録・保存してから再起動する。
+                var t = TargetRegistry.GetOrAdd(
+                    _settingsManager.Current.Targets, selected.ExecutablePath, selected.Title);
+                _settingsManager.Current.LastSelectedTargetKey = t.Key;
+                _settingsManager.Current.LastSelectedWindow = selected.Title;
+                _settingsManager.Save();
+
+                if (ProcessElevation.RelaunchAsAdmin())
+                {
+                    Application.Current.Shutdown();
+                    return false;
+                }
+
+                // 昇格をキャンセルされた → 通常権限のまま選択を続行する
+                Log("管理者としての再起動をキャンセルしました。通常権限のまま続行します。");
+                return true;
+            }
+
+            // いいえ → 選択を元の対象に戻す（再帰的なイベント発火を避けるため一時的に購読解除）
+            CmbWindows.SelectionChanged -= CmbWindows_SelectionChanged;
+            try
+            {
+                CmbWindows.SelectedItem = e.RemovedItems.Count > 0 ? e.RemovedItems[0] : null;
+            }
+            finally
+            {
+                CmbWindows.SelectionChanged += CmbWindows_SelectionChanged;
+            }
+            return false;
+        }
+
         private void CmbWindows_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.RemovedItems.Count > 0 && e.RemovedItems[0] is WindowItem oldItem && oldItem.Handle != IntPtr.Zero)
@@ -82,6 +129,14 @@ namespace SCtoolGui
             }
 
             if (CmbWindows.SelectedItem is WindowItem selected) {
+                // 管理者権限で動く対象は、非管理者のままだと最前面固定などが効かない。
+                // 選択の時点で判定し、昇格するか確認する（撮影自体は非管理者でも可能）。
+                if (!ProcessElevation.IsCurrentProcessElevated()
+                    && ProcessElevation.IsWindowProcessElevated(selected.Handle))
+                {
+                    if (!ConfirmAndElevateForTarget(selected, e)) return;
+                }
+
                 // タイトルではなく実行ファイルパスでターゲットを登録・特定する
                 var target = TargetRegistry.GetOrAdd(
                     _settingsManager.Current.Targets, selected.ExecutablePath, selected.Title);
