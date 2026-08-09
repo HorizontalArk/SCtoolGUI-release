@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Media;
 
 namespace SCtoolGui
 {
@@ -19,6 +20,9 @@ namespace SCtoolGui
         /// <summary>実行ファイル名（拡張子なし）。表示名の初期値に使う。</summary>
         public string ProcessName =>
             string.IsNullOrEmpty(ExecutablePath) ? string.Empty : Path.GetFileNameWithoutExtension(ExecutablePath);
+
+        /// <summary>プロセス（exe）のアイコン。一覧表示に使う。取得できなければ null。</summary>
+        public ImageSource? Icon { get; set; }
     }
 
     public static class WindowManager
@@ -84,11 +88,13 @@ namespace SCtoolGui
 
                         if (!string.IsNullOrEmpty(title) && title != "SCtool" && title != "詳細設定")
                         {
+                            string exePath = GetExecutablePath(hWnd);
                             windows.Add(new WindowItem
                             {
                                 Title = title,
                                 Handle = hWnd,
-                                ExecutablePath = GetExecutablePath(hWnd),
+                                ExecutablePath = exePath,
+                                Icon = ProcessIconCache.Get(exePath),
                             });
                         }
                     }

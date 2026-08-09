@@ -202,6 +202,7 @@ namespace SCtoolGui
                         Title = target.DisplayName,
                         Handle = IntPtr.Zero,
                         ExecutablePath = target.ExecutablePath,
+                        Icon = ProcessIconCache.Get(target.ExecutablePath),
                     });
                     matched = activeWindows[0];
                     _trackedHandle = IntPtr.Zero;
@@ -223,12 +224,14 @@ namespace SCtoolGui
             var target = CurrentTarget;
             if (target == null) {
                 TxtWindowStatus.Text = "対象アプリが選択されていません";
-                TxtWindowStatus.Foreground = Brushes.Gray;
+                TxtWindowStatus.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorTertiaryBrush");
                 return;
             }
 
-            string name = target.DisplayName;
             var targetWindow = FindTargetWindow();
+            // 状態表示には「選んだウィンドウ名(タイトル)」を出す。
+            // 保存フォルダ名に使う DisplayName(呼び名=exe名) とは別物なので分ける。
+            string name = !string.IsNullOrEmpty(target.LastKnownTitle) ? target.LastKnownTitle : target.DisplayName;
 
             if (targetWindow != null) {
                 if (CmbWindows.SelectedItem is WindowItem selected)
@@ -238,10 +241,10 @@ namespace SCtoolGui
 
                 if (WindowManager.IsWindowMinimized(targetWindow.Handle)) {
                     TxtWindowStatus.Text = $"{name} は最小化されています";
-                    TxtWindowStatus.Foreground = Brushes.DarkOrange;
+                    TxtWindowStatus.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorCautionBrush");
                 } else {
                     TxtWindowStatus.Text = $"{name} は起動中です";
-                    TxtWindowStatus.Foreground = Brushes.Green;
+                    TxtWindowStatus.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorSuccessBrush");
 
                     if (ChkAlwaysOnTop.IsChecked == true)
                     {
@@ -254,7 +257,7 @@ namespace SCtoolGui
                     selected.Handle = IntPtr.Zero;
                 }
                 TxtWindowStatus.Text = $"{name} が起動されていません";
-                TxtWindowStatus.Foreground = Brushes.Red;
+                TxtWindowStatus.SetResourceReference(TextBlock.ForegroundProperty, "SystemFillColorCriticalBrush");
 
                 if (ChkAlwaysOnTop.IsChecked == true)
                 {

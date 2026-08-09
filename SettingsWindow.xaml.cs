@@ -19,7 +19,9 @@ namespace SCtoolGui
 
         public bool ResultAlwaysRunAsAdmin { get; private set; }
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin)
+        public string ResultTheme { get; private set; } = "System";
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -44,6 +46,8 @@ namespace SCtoolGui
             SldVolume.Value = shutterVolume * 100;
 
             ChkAlwaysRunAsAdmin.IsChecked = alwaysRunAsAdmin;
+
+            CmbTheme.SelectedIndex = theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
@@ -91,6 +95,8 @@ namespace SCtoolGui
             ResultShutterVolume = SldVolume.Value / 100.0;
 
             ResultAlwaysRunAsAdmin = ChkAlwaysRunAsAdmin.IsChecked == true;
+
+            ResultTheme = CmbTheme.SelectedIndex switch { 1 => "Light", 2 => "Dark", _ => "System" };
 
             this.DialogResult = true;
         }

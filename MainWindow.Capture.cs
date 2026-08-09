@@ -55,7 +55,8 @@ namespace SCtoolGui
                 : ((char)_settingsManager.Current.HotkeyKey).ToString();
             
             keys.Add(keyStr);
-            BtnCapture.Content = $"📷 スクリーンショットを撮る ({string.Join("+", keys)})";
+            // ボタンの静的テキストとアイコンは XAML 側。ここではホットキー表示(キーキャップ)だけ更新する。
+            TxtCaptureHotkey.Text = string.Join(" + ", keys);
         }
 
         private void BtnCapture_Click(object sender, RoutedEventArgs e) => ExecuteCapture();

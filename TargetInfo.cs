@@ -14,7 +14,8 @@ namespace SCtoolGui
         /// <summary>実行ファイルのフルパス。このターゲットの識別子。</summary>
         public string ExecutablePath { get; set; } = "";
 
-        /// <summary>一覧表示と保存フォルダ名に使う名前。初期値は選んだウィンドウ名で、ユーザーが変更できる。</summary>
+        /// <summary>保存フォルダ名や呼び名に使う名前。初期値は exe 名（安定・パス安全）で、ユーザーが変更できる。
+        /// 状態表示に出す「ウィンドウ名」とは別物（そちらは LastKnownTitle を使う）。</summary>
         public string DisplayName { get; set; } = "";
 
         /// <summary>最後に確認したウィンドウタイトル。exeパス照合が使えない場合のフォールバックに使う。</summary>
@@ -30,18 +31,17 @@ namespace SCtoolGui
         public string Key => !string.IsNullOrEmpty(ExecutablePath) ? ExecutablePath : LastKnownTitle;
 
         /// <summary>
-        /// 表示名の初期値を作る。ユーザーが選んだウィンドウ名（タイトル）を優先し、
-        /// タイトルが取得できない場合のみ実行ファイル名にフォールバックする。
+        /// 呼び名(保存フォルダ名)の初期値を作る。exe名を優先し、
+        /// exeパスが取得できない場合のみウィンドウタイトルにフォールバックする。
         /// </summary>
         public static string DeriveDisplayName(string executablePath, string windowTitle)
         {
-            if (!string.IsNullOrEmpty(windowTitle)) return windowTitle;
-
             if (!string.IsNullOrEmpty(executablePath))
             {
-                return Path.GetFileNameWithoutExtension(executablePath);
+                string name = Path.GetFileNameWithoutExtension(executablePath);
+                if (!string.IsNullOrEmpty(name)) return name;
             }
-            return "";
+            return windowTitle;
         }
     }
 

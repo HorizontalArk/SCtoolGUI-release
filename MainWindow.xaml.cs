@@ -19,7 +19,8 @@ namespace SCtoolGui
         {
             InitializeComponent();
             _settingsManager.Load();
-            
+            ThemeManager.Apply(_settingsManager.Current.Theme);
+
             if (_settingsManager.Current.WindowLeft.HasValue && _settingsManager.Current.WindowTop.HasValue)
             {
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -91,7 +92,8 @@ namespace SCtoolGui
                 _settingsManager.Current.AutoCopyClipboard,
                 _settingsManager.Current.PlayShutterSound,
                 _settingsManager.Current.ShutterVolume,
-                _settingsManager.Current.AlwaysRunAsAdmin) { Owner = this };
+                _settingsManager.Current.AlwaysRunAsAdmin,
+                _settingsManager.Current.Theme) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -107,6 +109,9 @@ namespace SCtoolGui
                 _settingsManager.Current.ShutterVolume = settingsWin.ResultShutterVolume;
 
                 _settingsManager.Current.AlwaysRunAsAdmin = settingsWin.ResultAlwaysRunAsAdmin;
+
+                _settingsManager.Current.Theme = settingsWin.ResultTheme;
+                ThemeManager.Apply(_settingsManager.Current.Theme);
 
                 this.Topmost = _settingsManager.Current.AppTopmost;
 

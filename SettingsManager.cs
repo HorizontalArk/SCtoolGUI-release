@@ -38,6 +38,9 @@ namespace SCtoolGui
 
         /// <summary>常に管理者として起動するか。管理者権限のアプリを常用する人向け。</summary>
         public bool AlwaysRunAsAdmin { get; set; } = false;
+
+        /// <summary>UIテーマ。"System"（OS追従）/ "Light" / "Dark"。</summary>
+        public string Theme { get; set; } = "System";
     }
 
     public class SettingsManager
