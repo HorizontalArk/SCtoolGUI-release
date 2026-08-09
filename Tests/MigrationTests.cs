@@ -132,15 +132,25 @@ namespace SCtoolGui.Tests
         private const string GamePath = @"C:\Games\eldenring.exe";
 
         [Fact]
-        public void 新規ウィンドウはexe名を表示名として登録される()
+        public void 新規ウィンドウはウィンドウ名を表示名として登録される()
         {
             var targets = new List<TargetInfo>();
 
             var target = TargetRegistry.GetOrAdd(targets, GamePath, "ELDEN RING");
 
             Assert.Single(targets);
-            Assert.Equal("eldenring", target.DisplayName);
+            Assert.Equal("ELDEN RING", target.DisplayName);
             Assert.Equal(GamePath, target.ExecutablePath);
+        }
+
+        [Fact]
+        public void タイトルが無ければexe名を表示名にフォールバックする()
+        {
+            var targets = new List<TargetInfo>();
+
+            var target = TargetRegistry.GetOrAdd(targets, GamePath, "");
+
+            Assert.Equal("eldenring", target.DisplayName);
         }
 
         [Fact]
@@ -206,9 +216,9 @@ namespace SCtoolGui.Tests
         }
 
         [Fact]
-        public void 表示名の既定値はexe名から作られる()
+        public void 表示名の既定値はウィンドウ名から作られる()
         {
-            Assert.Equal("eldenring", TargetInfo.DeriveDisplayName(GamePath, "無視される"));
+            Assert.Equal("ELDEN RING", TargetInfo.DeriveDisplayName(GamePath, "ELDEN RING"));
         }
 
         [Fact]
