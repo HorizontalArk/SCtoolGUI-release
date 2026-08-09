@@ -31,7 +31,11 @@ namespace SCtoolGui
             ChkShift.IsChecked = (modifiers & 0x0004) != 0;
             ChkAlt.IsChecked = (modifiers & 0x0001) != 0;
 
-            var keys = new List<string> { "S", "A", "Z", "X", "C", "V", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12" };
+            // A〜Z ＋ 0〜9 ＋ F1〜F12 を選択肢にする
+            var keys = new List<string>();
+            for (char c = 'A'; c <= 'Z'; c++) keys.Add(c.ToString());
+            for (char c = '0'; c <= '9'; c++) keys.Add(c.ToString());
+            for (int i = 1; i <= 12; i++) keys.Add($"F{i}");
             CmbKey.ItemsSource = keys;
             
             string currentKeyStr = (key >= 0x70 && key <= 0x7B) ? $"F{key - 0x70 + 1}" : ((char)key).ToString();
@@ -101,7 +105,8 @@ namespace SCtoolGui
             if (ChkAlt.IsChecked == true) ResultModifiers |= 0x0001;
 
             string selectedKey = CmbKey.SelectedItem?.ToString() ?? "S";
-            if (selectedKey.StartsWith("F")) {
+            // "F1"〜"F12" はファンクションキー、"F" 単体は通常のキーとして扱う
+            if (selectedKey.Length > 1 && selectedKey[0] == 'F') {
                 ResultKey = (uint)(0x70 + int.Parse(selectedKey.Substring(1)) - 1);
             } else {
                 ResultKey = (uint)selectedKey[0];

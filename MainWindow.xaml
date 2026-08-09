@@ -103,9 +103,16 @@
                     <ComboBox x:Name="CmbWindows" Grid.Column="0" DropDownOpened="CmbWindows_DropDownOpened"
                               VerticalContentAlignment="Center" MinHeight="32"
                               ToolTip="キャプチャ対象のウィンドウを選択します">
+                        <!-- 各行をアイテム幅いっぱいに広げ、余白部分もクリック判定に含める -->
+                        <ComboBox.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ComboBox.ItemContainerStyle>
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Horizontal">
+                                <!-- Background="Transparent" で文字の無い余白もヒットテスト対象にする -->
+                                <StackPanel Orientation="Horizontal" Background="Transparent">
                                     <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0"
                                            Stretch="Uniform" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
                                     <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>

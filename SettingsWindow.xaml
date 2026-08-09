@@ -19,8 +19,9 @@
                 <CheckBox x:Name="ChkCtrl" Content="Ctrl" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <CheckBox x:Name="ChkShift" Content="Shift" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <CheckBox x:Name="ChkAlt" Content="Alt" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                
-                <ComboBox x:Name="CmbKey" Width="60" Margin="10,0,0,0"/>
+
+                <TextBlock Text="キー:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+                <ComboBox x:Name="CmbKey" Width="80" MinHeight="28" VerticalContentAlignment="Center"/>
             </StackPanel>
 
             <CheckBox x:Name="ChkAppTopmost" Content="SCtool本体を常に最前面に表示する" Margin="0,0,0,10"/>
