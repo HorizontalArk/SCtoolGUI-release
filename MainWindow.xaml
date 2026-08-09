@@ -86,7 +86,7 @@
             </Grid.ColumnDefinitions>
             
             <GroupBox Header="実行ログ" Grid.Column="0" Padding="5" Margin="0,0,5,0">
-                <TextBox x:Name="TxtLog" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" FontSize="11" Background="Black" Foreground="#00FF00"/>
+                <TextBox x:Name="TxtLog" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" FontFamily="Consolas" FontSize="11"/>
             </GroupBox>
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#CCC" Cursor="SizeWE"/>
@@ -141,7 +141,7 @@
                         
                         <Button x:Name="BtnOpenFile" Content="📂 開く" Padding="10,5" Margin="0,0,5,0" IsEnabled="False" Click="BtnOpenFile_Click" ToolTip="最後に保存した画像を既定のアプリで開きます" ToolTipService.ShowOnDisabled="True"/>
                         <Button x:Name="BtnCopyClipboard" Content="📋 クリップボードにコピー" Padding="10,5" Margin="0,0,5,0" IsEnabled="False" Click="BtnCopyClipboard_Click" ToolTip="最後に保存した画像をクリップボードにコピーします" ToolTipService.ShowOnDisabled="True"/>
-                        <Button x:Name="BtnDeleteFile" Content="🗑 削除" Padding="10,5" Background="#F8D7DA" Foreground="#721C24" IsEnabled="False" Click="BtnDeleteFile_Click" ToolTip="最後に保存した画像をPCから完全に削除します" ToolTipService.ShowOnDisabled="True"/>
+                        <Button x:Name="BtnDeleteFile" Content="🗑 削除" Padding="10,5" IsEnabled="False" Click="BtnDeleteFile_Click" ToolTip="最後に保存した画像をPCから完全に削除します" ToolTipService.ShowOnDisabled="True"/>
                     </StackPanel>
                 </Grid>
             </GroupBox>
