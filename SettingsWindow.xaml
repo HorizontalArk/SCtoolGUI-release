@@ -15,12 +15,16 @@
             </Grid>
 
             <TextBlock Text="ホットキー設定 (デフォルト: Ctrl+Shift+S):" Margin="0,0,0,5"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+            <!-- Fluentテーマの CheckBox は MinWidth が大きく、Ctrl/Shift/Alt とキー選択を
+                 横一列に並べると固定幅420pxの窓からはみ出してキー選択が見切れる。
+                 そのためキー選択は次の行に分ける。 -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <CheckBox x:Name="ChkCtrl" Content="Ctrl" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <CheckBox x:Name="ChkShift" Content="Shift" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <CheckBox x:Name="ChkAlt" Content="Alt" VerticalAlignment="Center" Margin="0,0,10,0"/>
-
-                <TextBlock Text="キー:" VerticalAlignment="Center" Margin="10,0,6,0"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                <TextBlock Text="キー:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                 <ComboBox x:Name="CmbKey" Width="80" MinHeight="28" VerticalContentAlignment="Center"/>
             </StackPanel>
 
