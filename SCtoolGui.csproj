@@ -9,6 +9,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- WPF自動生成のMainではなく、Velopackフックを先に走らせるProgram.Mainを使う -->
     <StartupObject>SCtoolGui.Program</StartupObject>
+    <!-- WPF標準Fluentテーマ(ThemeMode)は実験的APIのため、その診断を抑制する -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
