@@ -44,6 +44,9 @@ namespace SCtoolGui
 
         /// <summary>ユーザー指定のウィンドウアイコン画像パス。空なら埋め込み既定を使う。</summary>
         public string IconPath { get; set; } = "";
+
+        /// <summary>初回セットアップウィザードを完了したか。false の間は初回起動時に表示する。</summary>
+        public bool SetupCompleted { get; set; } = false;
     }
 
     public class SettingsManager
@@ -73,6 +76,14 @@ namespace SCtoolGui
             }
             return newPath;
         }
+
+        /// <summary>
+        /// 初回セットアップウィザードを表示すべきか。
+        /// 未完了かつ Velopack インストール済みのときのみ表示する
+        /// （ポータブル版・開発実行ではショートカット作成が無意味なため出さない）。
+        /// </summary>
+        public static bool ShouldShowSetupWizard(bool setupCompleted, bool isInstalled)
+            => !setupCompleted && isInstalled;
 
         public AppSettings Current { get; private set; }
 
