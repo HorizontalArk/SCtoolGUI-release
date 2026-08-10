@@ -354,8 +354,39 @@ namespace SCtoolGui
 
             string oldName = target.DisplayName;
             if (dialog.ResultName == oldName) return;
+            string newName = dialog.ResultName;
 
-            target.DisplayName = dialog.ResultName;
+            // アプリごとフォルダ分けが有効なら、旧名フォルダを新名へ移せるか判定する
+            var plan = FolderRenamePlanner.Plan(
+                _settingsManager.Current.SaveDirectory, oldName, newName,
+                _settingsManager.Current.SaveInWindowNameFolder,
+                System.IO.Directory.Exists);
+
+            if (plan.Action == FolderRenameAction.Move)
+            {
+                var ask = MessageBox.Show(
+                    $"既存の画像フォルダ「{oldName}」を新しい名前「{newName}」に移動しますか？\n" +
+                    "「いいえ」を選ぶと、以後は新しい名前のフォルダに保存されます（旧フォルダは残ります）。",
+                    "画像フォルダの移動", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (ask == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        System.IO.Directory.Move(plan.OldPath!, plan.NewPath!);
+                        Log($"画像フォルダを [{oldName}] から [{newName}] へ移動しました。");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"【警告】画像フォルダの移動に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+            else if (plan.Action == FolderRenameAction.ConflictSkip)
+            {
+                Log($"【注意】新しい名前「{newName}」のフォルダが既にあるため、旧フォルダの移動は行いませんでした。");
+            }
+
+            target.DisplayName = newName;
             SaveAndLog($"呼び名を [{oldName}] から [{target.DisplayName}] に変更しました。");
 
             UpdateCurrentSavePathDisplay();
