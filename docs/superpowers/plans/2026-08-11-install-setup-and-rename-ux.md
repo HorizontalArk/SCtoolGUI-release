@@ -519,6 +519,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `FolderRenamePlanner.cs`
+- Modify: `Tests/SCtoolGui.Tests.csproj`（`<Compile Include="..\FolderRenamePlanner.cs" .../>` を追加。テストプロジェクトはプロジェクト参照ではなくソースをリンクして取り込む方式のため必須）
 - Test: `Tests/FolderRenamePlannerTests.cs`
 
 **Interfaces:**
@@ -605,7 +606,12 @@ namespace SCtoolGui.Tests
 Run: `dotnet test Tests/SCtoolGui.Tests.csproj --filter FolderRenamePlannerTests`
 Expected: コンパイルエラー（型未定義）
 
-- [ ] **Step 3: 実装**
+- [ ] **Step 3: 実装（＋Testsプロジェクトにリンク追加）**
+
+`Tests/SCtoolGui.Tests.csproj` の `<Compile Include>` 群に追加:
+```xml
+    <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
+```
 
 `FolderRenamePlanner.cs`:
 ```csharp
