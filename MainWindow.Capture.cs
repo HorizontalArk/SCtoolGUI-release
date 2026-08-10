@@ -61,6 +61,25 @@ namespace SCtoolGui
 
         private void BtnCapture_Click(object sender, RoutedEventArgs e) => ExecuteCapture();
 
+        /// <summary>表示中の ToolTip を閉じ、対象ウィンドウへの写り込みを防ぐ。</summary>
+        private void DismissOpenToolTip()
+        {
+            var btn = BtnCapture;
+            if (btn == null) return;
+
+            // ToolTip がオブジェクトなら直接閉じる
+            if (btn.ToolTip is System.Windows.Controls.ToolTip tip)
+            {
+                tip.IsOpen = false;
+            }
+            // 文字列 ToolTip も含め、一時無効化→再有効化で確実に閉じる
+            System.Windows.Controls.ToolTipService.SetIsEnabled(btn, false);
+            System.Windows.Controls.ToolTipService.SetIsEnabled(btn, true);
+
+            // 閉じた状態を描画へ反映させる（レンダリング優先度で1サイクル回す）
+            Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
         private void ExecuteCapture()
         {
             if (CmbWindows.SelectedItem is WindowItem selected) {
@@ -75,6 +94,9 @@ namespace SCtoolGui
                 }
 
                 try {
+                    // ボタン上のマウスで開いた ToolTip が対象ウィンドウに重なると写り込むため、先に閉じる
+                    DismissOpenToolTip();
+
                     string baseDir = _settingsManager.Current.SaveDirectory;
                     string targetDir = baseDir;
 
@@ -111,6 +133,11 @@ namespace SCtoolGui
                     }
 
                 } catch (Exception ex) { Log($"【エラー】 {ex.Message}"); }
+                finally
+                {
+                    // 撮影のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す
+                    BringToolToForeground();
+                }
             }
         }
 

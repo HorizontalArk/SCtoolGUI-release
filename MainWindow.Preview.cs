@@ -57,6 +57,12 @@ namespace SCtoolGui
                 if (verbose) Log($"【エラー】プレビュー更新中にエラーが発生しました: {ex.Message}");
                 return false;
             }
+            finally
+            {
+                // プレビュー取得のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す。
+                // （対象が最小化などでプレビューに失敗しても、ツールが隠れたままにならないようにする）
+                BringToolToForeground();
+            }
         }
 
         private void UpdateTempPreview() => CaptureTempPreview(verbose: true);

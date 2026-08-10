@@ -63,7 +63,60 @@ namespace SCtoolGui
             base.OnClosed(e);
         }
 
-        private void Log(string msg) 
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
+        /// <summary>
+        /// 撮影のため対象を前面化した後、ツール自身を前面へ戻す。
+        ///
+        /// SetForegroundWindow は、直前に別アプリがフォアグラウンドを取った状態では
+        /// OS のフォアグラウンドロックにより無視される。そこで前面スレッドへ一時的に
+        /// AttachThreadInput してから前面化することで、確実にツールを前面へ戻す。
+        ///
+        /// なお対象が管理者権限ウィンドウで SCtool が非管理者の場合、UIPI により
+        /// AttachThreadInput/SetForegroundWindow はブロックされる。ただし管理者対象の選択時は
+        /// CmbWindows_SelectionChanged で昇格を促しており（承諾すれば両者管理者になり成立）、
+        /// 昇格を断った場合は catch で握りつぶし、前面復帰しないだけに留める（クラッシュしない）。
+        /// </summary>
+        private void BringToolToForeground()
+        {
+            try
+            {
+                var self = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                if (self == IntPtr.Zero) { Activate(); return; }
+
+                IntPtr fg = GetForegroundWindow();
+                uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
+                uint thisThread = GetCurrentThreadId();
+
+                if (fgThread != thisThread && fgThread != 0)
+                {
+                    AttachThreadInput(thisThread, fgThread, true);
+                    BringWindowToTop(self);
+                    SetForegroundWindow(self);
+                    AttachThreadInput(thisThread, fgThread, false);
+                }
+                else
+                {
+                    BringWindowToTop(self);
+                    SetForegroundWindow(self);
+                }
+                Activate();
+            }
+            catch { }
+        }
+
+        private void Log(string msg)
         { 
             TxtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\r\n"); 
             TxtLog.ScrollToEnd(); 
