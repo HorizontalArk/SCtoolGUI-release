@@ -458,11 +458,11 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `SettingsManager.ShouldShowSetupWizard`（Task 1）, `SetupWizardWindow`（Task 4）, `ShortcutInstaller.Create`（Task 3）, `AppUpdateService.IsInstalled`（`AppUpdateService.cs:21`）, `ShortcutLocationResolver.Resolve`（Task 2）
 
-`Program.cs` は現在 `settings.Load()` を try 内で行い `AlwaysRunAsAdmin` を見ている。ウィザード分岐はその try の後、SingleInstance 取得の前に入れる（ウィザードは単一起動ガードの内側/外側どちらでも良いが、昇格再起動と競合しないよう昇格判定の後に置く）。`App` はまだ生成前なので、ウィザードは素の `Window` として `ShowDialog()` する（WPF は最初の Window 表示前でも `Application` が必要な場合があるため、ウィザード表示用に一時 `Application` を用意するのではなく、既存の起動順で `App` 生成前に `new SetupWizardWindow(...).ShowDialog()` が動くか実装時に確認する。動かない場合は `App` 生成後・`MainWindow` 表示前に移す）。
+**実装確定:** ウィザードのテーマ(Fluent)ブラシは `App.xaml` のマージ辞書由来のため、`App.InitializeComponent()` の**後**に出す必要がある。よって `var app = new App(); app.InitializeComponent();` の直後、`app.Run();` の前に分岐を置く（当初案の「SingleInstance 前」ではテーマ未読込で色が既定になる）。
 
 - [ ] **Step 1: 実装**
 
-`Program.cs` の `AlwaysRunAsAdmin` を処理する try/catch（`Program.cs:25-34`）の直後に追加:
+`Program.cs` の `app.InitializeComponent();` の直後、`app.Run();` の前に追加:
 ```csharp
             // 初回セットアップウィザード（インストール版の初回のみ）。
             try
