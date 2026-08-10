@@ -58,6 +58,7 @@ jobs:
           --packDir publish
           --mainExe SCtoolGui.exe
           --packTitle SCtoolGui
+          --shortcuts None
 
       - name: GitHub Release へ公開
         run: >
