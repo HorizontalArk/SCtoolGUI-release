@@ -29,6 +29,7 @@
     <Compile Include="..\ProcessElevation.cs" Link="Source\ProcessElevation.cs" />
     <Compile Include="..\FileNameUtil.cs" Link="Source\FileNameUtil.cs" />
     <Compile Include="..\ShortcutLocationResolver.cs" Link="Source\ShortcutLocationResolver.cs" />
+    <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
   </ItemGroup>
 
 </Project>
