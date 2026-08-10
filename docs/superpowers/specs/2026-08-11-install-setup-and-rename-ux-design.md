@@ -1,0 +1,93 @@
+# 初回セットアップウィザード＋名前変更まわりのUX改善 設計
+
+作成日: 2026-08-11
+ブランチ: `feature/install-setup-and-rename-ux`
+
+## 背景と目的
+
+3つの独立した改善を1ブランチで扱う（コミットは分ける）。
+
+- **A. インストール時のショートカット/保存場所を任意化**: 現状 Velopack がインストール時にデスクトップ＋スタートメニューのショートカットを勝手に作る。よくあるインストーラのように任意にしたい。あわせて画像保存場所の初期設定を誘導したい。
+- **B. 名前変更で旧フォルダが別扱いになる問題**: 「名前変更」は `DisplayName`（呼び名）を変える機能で、`DisplayName` は保存フォルダ名の元。名前を変えると保存先フォルダが変わり、旧名フォルダが孤立する。
+- **C. ToolTip 写り込みバグ**: キャプチャボタンの ToolTip が対象ウィンドウの画角内にある場合、ToolTip が消える前にキャプチャが実行され画像に写り込む。
+
+（当初挙がった「名前変更ボタンにtipsがない」は誤認 — ToolTip は付いており表示が遅れて見えていなかっただけ。**据え置き**。）
+
+## 技術的前提（調査結果）
+
+- Velopack のインストーラ(Setup.exe)は**選択UIを持たないサイレントインストール**（進捗バーのみ）。InnoSetup/NSIS 的なウィザードは出せない。
+- ショートカットは `vpk pack --shortcuts {locations}` で制御。既定 `Desktop,StartMenuRoot`、`None` で無効化可。これは**ビルド時固定**でインストール時にユーザーが選ぶものではない。
+- Velopack SDK に実行時ショートカット操作のクラスがある（`OnAfterInstallFastCallback` の `Shortcuts` クラス系）。アプリ実行時にショートカットを作成できる。
+- → 「任意化」は**アプリ初回起動時のセットアップウィザード**で実現するのが唯一現実的。
+
+## テーマA: 初回セットアップウィザード
+
+### A-1. ビルド設定
+- `.github/workflows/release.yml` の `vpk pack` に `--shortcuts None` を追加し、Velopack の自動ショートカット作成を無効化する。
+
+### A-2. 設定モデル
+- `AppSettings`（`SettingsManager.cs`）に `public bool SetupCompleted { get; set; } = false;` を追加。
+- 既存ユーザー（フラグ無し=false でデシリアライズ）にも初回だけウィザードが出る。新機能の案内も兼ねる。これは許容。
+
+### A-3. セットアップウィザード画面（新規 `SetupWizardWindow.xaml` / `.xaml.cs`）
+- テーマ連動（`DynamicResource` 系を使い、直書き色は使わない。既存カード/トグルスタイルに合わせる）。ステップ分割せず縦1画面。
+- 内容:
+  - ショートカット作成: 「デスクトップに作成」チェック / 「スタートメニューに作成」チェック。**既定=両方ON**。
+  - 画像の保存先: 既定 `Pictures\SCtool` をテキスト表示。「参照」ボタンでフォルダ選択して変更可。そのまま進めば既定採用。
+  - トグル: 「アプリごとにフォルダを分ける」（`SaveInWindowNameFolder`）。**既定=現状の false 維持**。
+  - 「完了」ボタン（ダイアログ結果 true）。閉じる/キャンセルは結果 false。
+
+### A-4. ショートカット作成（新規 `ShortcutInstaller.cs`）
+- Velopack SDK の shortcut API を使い、ウィザードの選択に従いデスクトップ / スタートメニューに作成する。
+- Velopack 非管理環境（ポータブル版・開発 `dotnet run`）では `UpdateManager.IsInstalled == false` なのでショートカット作成をスキップする。ウィザード自体もこの場合の扱いは A-5 に従う。
+
+### A-5. 起動フロー（`Program.cs`）
+- 設定 Load 後、以下の条件でウィザードを表示:
+  - `settings.Current.SetupCompleted == false` かつ Velopack インストール済み（`IsInstalled == true`）。
+- ウィザードを（メインウィンドウ生成前に）モーダル表示。
+  - 完了(true): 選択をコピー（`SaveDirectory` / `SaveInWindowNameFolder`）→ 設定保存 → `ShortcutInstaller` でショートカット作成 → `SetupCompleted = true` を保存 → メインウィンドウへ。
+  - キャンセル/閉じる(false): `SetupCompleted` は false のまま（次回再表示）。ショートカットは作らない。デフォルト設定のままメインウィンドウへ。
+- 非インストール環境（ポータブル/開発）では `SetupCompleted` を true にしてウィザードをスキップ（毎回出さない）。ショートカットも作らない。
+
+## テーマB: 名前変更時のフォルダ引き継ぎ
+
+対象: `MainWindow.Windows.cs` の `BtnRenameTarget_Click`。
+
+- 名前変更で `DisplayName` を `oldName` → `newName` に変える際、以下を満たす場合に旧フォルダの移動を確認する:
+  - `SaveInWindowNameFolder == true`（アプリごとフォルダ分けが有効）
+  - 旧フォルダ `Path.Combine(SaveDirectory, ToSafeName(oldName))` が存在する
+  - 新フォルダ名が旧と異なる（安全名比較で）
+- 上記のとき「既存の画像フォルダ『oldName』を新しい名前『newName』に移動しますか？」と確認ダイアログ（はい/いいえ）。
+  - はい: `Directory.Move(旧, 新)` で中身ごと移動。
+    - 新フォルダが既に存在する場合は `Move` が失敗するため、その旨をログに出し移動しない（マージはしない=事故防止）。
+  - いいえ: 従来通り（旧フォルダは残し、以後は新フォルダを使う）。
+- 移動の成否・スキップ理由はログに出す。`DisplayName` 変更・保存自体は従来通り実行する。
+
+## テーマC: ToolTip 写り込みバグ
+
+対象: `MainWindow.Capture.cs` の `ExecuteCapture()`（実キャプチャ `ScreenCapture.SaveWindowCaptureWithExif` 呼び出しの直前）。
+
+- キャプチャ実行の直前に、開いている ToolTip を強制的に閉じ、画面から消えた状態を描画に反映させてから撮影する。
+  - 方法: アプリ内で現在表示中の ToolTip を dismiss する（`ToolTipService` 経由でキャプチャボタンの ToolTip を一時無効化 → 再有効化、もしくは開いている Popup を閉じる）。
+  - 閉じた後、対象ウィンドウの再描画/合成が反映されるよう、キャプチャ前に短い待機（`Dispatcher` の描画優先度で1サイクル回す、または最小 sleep）を入れる。
+- ホットキー経由でもボタンクリック経由でも安全になるよう、`ExecuteCapture()` の入口で一括処理する。
+- キャプチャ対象は他アプリのウィンドウ（`selected.Handle`）だが、ToolTip は最前面トップレベル Popup なので対象ウィンドウ上に重なると写り込む。これを消してから撮る。
+
+## テスト方針
+
+- **A**: 単体テストは設定モデル（`SetupCompleted` の既定/シリアライズ往復）と起動判定ロジック（インストール済み×フラグの真理値表）を対象にする。ウィザードUIとショートカット作成は実機確認（verify）で担保。
+- **B**: フォルダ移動の判定ロジック（移動する/しない/衝突でスキップ）を、`Directory.Move` を薄くラップして単体テスト可能にする。実機で旧フォルダ→新フォルダ移動を確認。
+- **C**: 実機確認中心（ToolTip を対象ウィンドウ上に重ねてキャプチャ→写り込まないこと）。可能なら「キャプチャ前に ToolTip dismiss を呼ぶ」ことをロジックとして分離し検証する。
+
+## スコープ外（YAGNI）
+
+- InnoSetup/NSIS への移行（自動更新を失うため不採用）。
+- ウィザードのマルチステップ化・言語切替。
+- 名前変更時のフォルダ**マージ**（衝突時は移動せずログのみ）。
+- スタートアップ（Startup）ショートカットの選択肢（今回はデスクトップ＋スタートメニューの2つのみ）。
+
+## 関連メモリ
+
+- リリース手順: `release-flow-tag-push-ci`
+- UI はテーマ連動・直書き色禁止の方針: `ui-redesign-direction`
+- 実物UI検証の落とし穴: `ui-verify-uipi-and-clipping`
