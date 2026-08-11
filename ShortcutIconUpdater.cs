@@ -38,14 +38,27 @@ namespace SCtoolGui
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                          "SCtoolGui", "user_icon.ico");
 
-        /// <summary>ユーザー画像を .ico 化し、存在する既知 .lnk の IconLocation を更新する。</summary>
-        public static void ApplyUserIcon(string userImagePath)
+        /// <summary>
+        /// ユーザー画像を .ico 化し、存在する既知 .lnk の IconLocation を更新する。
+        /// .ico 変換に成功したら true。失敗（未対応/破損画像など）なら false を返し、error に理由を入れる。
+        /// </summary>
+        public static bool ApplyUserIcon(string userImagePath, out string error)
         {
-            if (string.IsNullOrEmpty(userImagePath) || !File.Exists(userImagePath)) return;
-            if (!IconIcoWriter.TryWriteIco(userImagePath, UserIcoPath, out _)) return;
+            error = "";
+            if (string.IsNullOrEmpty(userImagePath) || !File.Exists(userImagePath))
+            {
+                error = "画像ファイルが見つかりません。";
+                return false;
+            }
+            if (!IconIcoWriter.TryWriteIco(userImagePath, UserIcoPath, out error))
+                return false;
             // すべての .lnk を、変換した共通の .ico に向ける。
             UpdateAll(_ => $"{UserIcoPath},0");
+            return true;
         }
+
+        /// <summary>error を必要としない呼び出し向けのオーバーロード。</summary>
+        public static bool ApplyUserIcon(string userImagePath) => ApplyUserIcon(userImagePath, out _);
 
         /// <summary>
         /// 既知 .lnk の IconLocation を、その .lnk 自身のターゲット exe（埋め込み app.ico）へ戻す。

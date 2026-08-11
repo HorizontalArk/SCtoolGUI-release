@@ -104,6 +104,15 @@ namespace SCtoolGui
                     var choice = ShortcutLocationResolver.Resolve(
                         wizard.CreateDesktopShortcut, wizard.CreateStartMenuShortcut);
                     ShortcutInstaller.Create(choice, isInstalled);
+
+                    // 既にユーザーアイコンが設定済みなら、今作った .lnk にも反映しておく。
+                    // ShortcutInstaller は exe 埋め込みアイコンで .lnk を作るため、これが無いと
+                    // 初回セットアップ直後だけタスクバーが既定アイコンのままになる。
+                    if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
+                    {
+                        try { ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath); }
+                        catch { }
+                    }
                 }
                 // キャンセル/閉じるは SetupCompleted=false のまま（次回再表示）
                 return true;
@@ -456,9 +465,14 @@ namespace SCtoolGui
                 try
                 {
                     if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
-                        ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath);
+                    {
+                        if (!ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath, out string iconErr))
+                            Log($"【警告】アイコンをタスクバー用に変換できませんでした（{iconErr}）。ウィンドウのアイコンのみ変更されます。");
+                    }
                     else
+                    {
                         ShortcutIconUpdater.ResetToDefault();
+                    }
                 }
                 catch { }
 
