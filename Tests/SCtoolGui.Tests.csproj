@@ -33,6 +33,7 @@
     <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
     <Compile Include="..\PreviewOrientationLogic.cs" Link="Source\PreviewOrientationLogic.cs" />
     <Compile Include="..\IconIcoWriter.cs" Link="Source\IconIcoWriter.cs" />
+    <Compile Include="..\ShortcutIconUpdater.cs" Link="Source\ShortcutIconUpdater.cs" />
   </ItemGroup>
 
 </Project>
