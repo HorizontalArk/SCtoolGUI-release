@@ -53,6 +53,10 @@ namespace SCtoolGui
 
         protected override void OnClosed(EventArgs e)
         {
+            // WM_SETICON で送った独自 HICON を破棄（リーク防止）。
+            if (_bigIcon != IntPtr.Zero) { DestroyIcon(_bigIcon); _bigIcon = IntPtr.Zero; }
+            if (_smallIcon != IntPtr.Zero) { DestroyIcon(_smallIcon); _smallIcon = IntPtr.Zero; }
+
             if (this.WindowState == WindowState.Normal)
             {
                 _settingsManager.Current.WindowLeft = this.Left;
@@ -146,19 +150,177 @@ namespace SCtoolGui
             }
         }
 
-        /// <summary>設定のアイコン画像パスを Window.Icon に反映する。空/不正なら埋め込み既定に戻す。</summary>
+        /// <summary>
+        /// 設定のアイコン画像パスをウィンドウへ反映する。空/不正なら埋め込み既定に戻す。
+        ///
+        /// WPF の <see cref="Window.Icon"/> だけを差し替えると、タイトルバーや Alt+Tab には効くが、
+        /// タスクバーボタンのアイコン（大アイコン）が更新されないことがある。そこで WPF 側の設定に加え、
+        /// Win32 の WM_SETICON で大(32px)・小(16px)アイコンを HWND へ明示送信し、タスクバーにも確実に反映する。
+        ///
+        /// HWND 未生成（初回コンストラクタ時点）では WM_SETICON を送れないため、その場合は
+        /// <see cref="OnSourceInitialized"/> で再適用する（<see cref="_iconApplyPending"/> フラグで通知）。
+        /// </summary>
         private void ApplyWindowIcon()
         {
             string path = _settingsManager.Current.IconPath;
+            bool hasCustom = !string.IsNullOrEmpty(path) && File.Exists(path);
+
+            // WPF 側（タイトルバー・Alt+Tab 用）。null なら埋め込み既定(app.ico)に戻る。
             try
             {
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
-                    this.Icon = new System.Windows.Media.Imaging.BitmapImage(new Uri(path));
-                else
-                    this.Icon = null; // 埋め込み既定に戻す
+                this.Icon = hasCustom
+                    ? new System.Windows.Media.Imaging.BitmapImage(new Uri(path))
+                    : null;
             }
-            catch { this.Icon = null; }
+            catch { this.Icon = null; hasCustom = false; }
+
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            if (hwnd == IntPtr.Zero)
+            {
+                // HWND 未生成。SourceInitialized で再適用させる。
+                _iconApplyPending = true;
+                return;
+            }
+
+            ApplyTaskbarIcon(hwnd, hasCustom ? path : null);
         }
+
+        /// <summary>ApplyWindowIcon が HWND 未生成時に呼ばれたら、SourceInitialized で再適用するためのフラグ。</summary>
+        private bool _iconApplyPending;
+
+        /// <summary>WM_SETICON で送った独自 HICON。差し替え・破棄のため保持する（リーク防止）。</summary>
+        private IntPtr _bigIcon, _smallIcon;
+
+        private const int WM_SETICON = 0x0080;
+        private const int ICON_SMALL = 0;
+        private const int ICON_BIG = 1;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern bool DestroyIcon(IntPtr hIcon);
+
+        /// <summary>
+        /// タスクバー用に大小 HICON を WM_SETICON で送る。path が null なら独自アイコンを外し、
+        /// 埋め込み既定(app.ico)へ戻す（NULL を送ると OS がクラスアイコンにフォールバックする）。
+        /// </summary>
+        private void ApplyTaskbarIcon(IntPtr hwnd, string? path)
+        {
+            IntPtr newBig = IntPtr.Zero, newSmall = IntPtr.Zero;
+            if (path != null)
+            {
+                try
+                {
+                    newBig = CreateHIcon(path, 32);
+                    newSmall = CreateHIcon(path, 16);
+                }
+                catch { newBig = newSmall = IntPtr.Zero; }
+            }
+
+            SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_BIG, newBig);
+            SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_SMALL, newSmall);
+
+            // 直前まで使っていた独自アイコンを破棄（リーク防止）。差し替え後に破棄する。
+            if (_bigIcon != IntPtr.Zero) DestroyIcon(_bigIcon);
+            if (_smallIcon != IntPtr.Zero) DestroyIcon(_smallIcon);
+            _bigIcon = newBig;
+            _smallIcon = newSmall;
+        }
+
+        /// <summary>
+        /// 画像ファイルを指定サイズ(px)へデコードし、BGRA32 の DIB から HICON を生成する。
+        /// System.Drawing に依存せず WPF + Win32(CreateIconIndirect) のみで作る。呼び出し側で DestroyIcon する。
+        /// </summary>
+        private static IntPtr CreateHIcon(string path, int size)
+        {
+            var decoded = new System.Windows.Media.Imaging.BitmapImage();
+            decoded.BeginInit();
+            decoded.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            decoded.UriSource = new Uri(path);
+            decoded.EndInit();
+
+            // 指定サイズの正方形へ、アスペクトを保って中央配置で描画する。
+            var target = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                size, size, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            var visual = new System.Windows.Media.DrawingVisual();
+            using (var dc = visual.RenderOpen())
+            {
+                double scale = Math.Min((double)size / decoded.PixelWidth, (double)size / decoded.PixelHeight);
+                double w = decoded.PixelWidth * scale, h = decoded.PixelHeight * scale;
+                double x = (size - w) / 2, y = (size - h) / 2;
+                dc.DrawImage(decoded, new Rect(x, y, w, h));
+            }
+            target.Render(visual);
+
+            // BGRA32 ピクセルを取り出す。
+            var bgra = new System.Windows.Media.Imaging.FormatConvertedBitmap(
+                target, System.Windows.Media.PixelFormats.Bgra32, null, 0);
+            int stride = size * 4;
+            byte[] pixels = new byte[stride * size];
+            bgra.CopyPixels(pixels, stride, 0);
+
+            // カラービットマップ（AND マスクは 32bpp アルファがあるので全 0 でよい）から HICON を作る。
+            IntPtr color = CreateBgraDib(size, size, pixels);
+            IntPtr mask = CreateBitmap(size, size, 1, 1, IntPtr.Zero); // モノクロマスク（未使用領域は 0）
+            try
+            {
+                var info = new ICONINFO { fIcon = true, hbmMask = mask, hbmColor = color };
+                return CreateIconIndirect(ref info);
+            }
+            finally
+            {
+                if (color != IntPtr.Zero) DeleteObject(color);
+                if (mask != IntPtr.Zero) DeleteObject(mask);
+            }
+        }
+
+        /// <summary>BGRA32 のトップダウン DIB セクションを作り、ピクセルを書き込んで返す。</summary>
+        private static IntPtr CreateBgraDib(int width, int height, byte[] bgra)
+        {
+            var bmi = new BITMAPINFO
+            {
+                biSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<BITMAPINFOHEADER>(),
+                biWidth = width,
+                biHeight = -height, // 負でトップダウン
+                biPlanes = 1,
+                biBitCount = 32,
+                biCompression = 0, // BI_RGB
+            };
+            IntPtr bits;
+            IntPtr hbm = CreateDIBSection(IntPtr.Zero, ref bmi, 0 /*DIB_RGB_COLORS*/, out bits, IntPtr.Zero, 0);
+            if (hbm != IntPtr.Zero && bits != IntPtr.Zero)
+                System.Runtime.InteropServices.Marshal.Copy(bgra, 0, bits, bgra.Length);
+            return hbm;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct ICONINFO { public bool fIcon; public int xHotspot; public int yHotspot; public IntPtr hbmMask; public IntPtr hbmColor; }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct BITMAPINFOHEADER
+        {
+            public uint biSize; public int biWidth; public int biHeight; public ushort biPlanes;
+            public ushort biBitCount; public uint biCompression; public uint biSizeImage;
+            public int biXPelsPerMeter; public int biYPelsPerMeter; public uint biClrUsed; public uint biClrImportant;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct BITMAPINFO
+        {
+            public uint biSize; public int biWidth; public int biHeight; public ushort biPlanes;
+            public ushort biBitCount; public uint biCompression; public uint biSizeImage;
+            public int biXPelsPerMeter; public int biYPelsPerMeter; public uint biClrUsed; public uint biClrImportant;
+            // カラーテーブルは 32bpp では不要
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern IntPtr CreateIconIndirect(ref ICONINFO icon);
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern IntPtr CreateBitmap(int w, int h, uint planes, uint bpp, IntPtr bits);
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern IntPtr CreateDIBSection(IntPtr hdc, ref BITMAPINFO bmi, uint usage, out IntPtr bits, IntPtr section, uint offset);
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        private static extern bool DeleteObject(IntPtr hObject);
 
         private PreviewMode CurrentPreviewMode =>
             _settingsManager.Current.PreviewOrientation == "Vertical"
