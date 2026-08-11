@@ -105,14 +105,9 @@ namespace SCtoolGui
                         wizard.CreateDesktopShortcut, wizard.CreateStartMenuShortcut);
                     ShortcutInstaller.Create(choice, isInstalled);
 
-                    // 既にユーザーアイコンが設定済みなら、今作った .lnk にも反映しておく。
-                    // ShortcutInstaller は exe 埋め込みアイコンで .lnk を作るため、これが無いと
-                    // 初回セットアップ直後だけタスクバーが既定アイコンのままになる。
-                    if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
-                    {
-                        try { ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath); }
-                        catch { }
-                    }
+                    // ShortcutInstaller は exe 埋め込みアイコンで .lnk を作るため、既にユーザー
+                    // アイコンが設定済みなら、今作った .lnk にもそれを反映しておく（未設定なら何もしない）。
+                    ApplyIconToShortcuts();
                 }
                 // キャンセル/閉じるは SetupCompleted=false のまま（次回再表示）
                 return true;
@@ -227,6 +222,29 @@ namespace SCtoolGui
                     this.Icon = null; // 埋め込み既定に戻す
             }
             catch { this.Icon = null; }
+        }
+
+        /// <summary>
+        /// 設定のアイコンをショートカット(.lnk)群へ反映する。タスクバー等の表示は .lnk の
+        /// IconLocation が支配するため、ウィンドウの <see cref="ApplyWindowIcon"/> とは別に行う。
+        /// IconPath が空なら既定(app.ico)へ戻す。変換に失敗したらログで通知する。
+        /// ウィザード完了時・詳細設定保存時の両方から呼ぶ共通処理。
+        /// </summary>
+        private void ApplyIconToShortcuts()
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
+                {
+                    if (!ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath, out string iconErr))
+                        Log($"【警告】アイコンをタスクバー用に変換できませんでした（{iconErr}）。ウィンドウのアイコンのみ変更されます。");
+                }
+                else
+                {
+                    ShortcutIconUpdater.ResetToDefault();
+                }
+            }
+            catch { }
         }
 
         private PreviewMode CurrentPreviewMode =>
@@ -459,22 +477,8 @@ namespace SCtoolGui
 
                 _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
                 ApplyWindowIcon();
-
-                // タスクバー等のアイコンは .lnk の IconLocation が支配するため、ここで .lnk 群も更新する。
-                // 反映は次回起動/サインインで確実化（即時反映は OS のアイコンキャッシュ都合で保証しない）。
-                try
-                {
-                    if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
-                    {
-                        if (!ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath, out string iconErr))
-                            Log($"【警告】アイコンをタスクバー用に変換できませんでした（{iconErr}）。ウィンドウのアイコンのみ変更されます。");
-                    }
-                    else
-                    {
-                        ShortcutIconUpdater.ResetToDefault();
-                    }
-                }
-                catch { }
+                // タスクバー等の .lnk 群にも反映する（反映は次回起動/サインインで確実化）。
+                ApplyIconToShortcuts();
 
                 _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
                 _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
