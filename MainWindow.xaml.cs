@@ -166,15 +166,17 @@ namespace SCtoolGui
 
         /// <summary>ルート Grid の左右マージン合計（Margin="16" × 2）。</summary>
         private const double RootMargin = 32;
-        /// <summary>縦モードで操作群とプレビューの間に空ける間隔。</summary>
-        private const double VerticalGap = 12;
         /// <summary>縦モード初期表示時に追加するプレビュー列の幅。</summary>
         private const double DefaultVerticalPreviewWidth = 380;
 
-        /// <summary>縦モードの操作群カラムの最小幅（キャプチャボタン等が見切れない下限）。</summary>
-        private const double OperationsColumnMinWidth = 360;
+        /// <summary>縦モードの操作群カラムの最小幅（キャプチャボタン行が見切れない下限）。</summary>
+        private const double OperationsColumnMinWidth = 500;
         /// <summary>縦モード初期表示時の操作群カラム幅（下限より少し広め。ここから可変）。</summary>
-        private const double DefaultOperationsColumnWidth = 420;
+        private const double DefaultOperationsColumnWidth = 540;
+
+        /// <summary>縦モードで操作群とプレビューの間に置く境界ドラッグ用スプリッター。
+        /// 横モードでは不要なので都度生成・除去する。</summary>
+        private GridSplitter? _verticalSplitter;
 
         /// <summary>LogCard を現在の親から外す（付け替えの前処理）。</summary>
         private void DetachLogCard()
@@ -183,12 +185,23 @@ namespace SCtoolGui
             else if (LogCard.Parent is Grid g) g.Children.Remove(LogCard);
         }
 
+        /// <summary>スプリッターがあればルートから外す。</summary>
+        private void RemoveVerticalSplitter()
+        {
+            if (_verticalSplitter != null)
+            {
+                RootLayoutGrid.Children.Remove(_verticalSplitter);
+                _verticalSplitter = null;
+            }
+        }
+
         /// <summary>プレビューの向きに応じてルートレイアウトを組み替え、窓サイズを合わせる。</summary>
         private void ApplyPreviewOrientation(PreviewMode mode)
         {
             RootLayoutGrid.RowDefinitions.Clear();
             RootLayoutGrid.ColumnDefinitions.Clear();
             DetachLogCard();
+            RemoveVerticalSplitter();
 
             if (mode == PreviewMode.Horizontal)
             {
@@ -209,27 +222,55 @@ namespace SCtoolGui
             }
             else
             {
+                // 縦モードは3列: 操作群 / スプリッター(境界ドラッグ) / プレビュー。
+                // 操作群列はピクセル幅（保存値または既定）で、スプリッターで自由に変えられる。
                 RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 bool previewRight = _settingsManager.Current.VerticalPreviewSide != "Left";
-                // 操作群は控えめな既定幅＋最小幅の可変。窓を広げた分はプレビュー側へ回る。
-                var opCol = new ColumnDefinition { Width = new GridLength(DefaultOperationsColumnWidth), MinWidth = OperationsColumnMinWidth };
+
+                double opWidth = _settingsManager.Current.VerticalOperationsWidth ?? DefaultOperationsColumnWidth;
+                var opCol = new ColumnDefinition { Width = new GridLength(opWidth), MinWidth = OperationsColumnMinWidth };
+                var splitterCol = new ColumnDefinition { Width = GridLength.Auto };
                 var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 200 };
+
+                _verticalSplitter = new GridSplitter
+                {
+                    Width = 6,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    ResizeBehavior = GridResizeBehavior.PreviousAndNext,
+                    ShowsPreview = true,
+                    Cursor = System.Windows.Input.Cursors.SizeWE,
+                    ToolTip = "ドラッグで操作群とプレビューの幅を調整"
+                };
+                _verticalSplitter.DragCompleted += VerticalSplitter_DragCompleted;
 
                 if (previewRight)
                 {
-                    RootLayoutGrid.ColumnDefinitions.Add(opCol);   // Col0=操作
-                    RootLayoutGrid.ColumnDefinitions.Add(prevCol); // Col1=プレビュー
-                    Grid.SetColumn(OperationsPanel, 0); Grid.SetColumn(PreviewCard, 1);
-                    PreviewCard.Margin = new Thickness(12, 0, 0, 0);
+                    // Col0=操作 / Col1=スプリッター / Col2=プレビュー
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(splitterCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol);
+                    Grid.SetColumn(OperationsPanel, 0);
+                    Grid.SetColumn(_verticalSplitter, 1);
+                    Grid.SetColumn(PreviewCard, 2);
+                    PreviewCard.Margin = new Thickness(6, 0, 0, 0);
                 }
                 else
                 {
-                    RootLayoutGrid.ColumnDefinitions.Add(prevCol); // Col0=プレビュー
-                    RootLayoutGrid.ColumnDefinitions.Add(opCol);   // Col1=操作
-                    Grid.SetColumn(PreviewCard, 0); Grid.SetColumn(OperationsPanel, 1);
-                    PreviewCard.Margin = new Thickness(0, 0, 12, 0);
+                    // Col0=プレビュー / Col1=スプリッター / Col2=操作
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(splitterCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);
+                    Grid.SetColumn(PreviewCard, 0);
+                    Grid.SetColumn(_verticalSplitter, 1);
+                    Grid.SetColumn(OperationsPanel, 2);
+                    PreviewCard.Margin = new Thickness(0, 0, 6, 0);
                 }
-                Grid.SetRow(OperationsPanel, 0); Grid.SetRow(PreviewCard, 0);
+                Grid.SetRow(OperationsPanel, 0);
+                Grid.SetRow(_verticalSplitter, 0);
+                Grid.SetRow(PreviewCard, 0);
+                RootLayoutGrid.Children.Add(_verticalSplitter);
 
                 // 縦モードではログを操作群（縦積み）の末尾に置く
                 OperationsPanel.Children.Add(LogCard);
@@ -237,6 +278,27 @@ namespace SCtoolGui
             }
 
             ApplyWindowSizeForMode(mode);
+        }
+
+        /// <summary>スプリッターのドラッグ完了時、操作群カラムの実幅を保存する。</summary>
+        private void VerticalSplitter_DragCompleted(object sender,
+            System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            // ドラッグ直後は列の ActualWidth がまだ更新前のことがあるため、
+            // レイアウト確定後（Loaded 相当の低優先度）に読み取って保存する。
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                int opColIndex = Grid.GetColumn(OperationsPanel);
+                if (opColIndex >= 0 && opColIndex < RootLayoutGrid.ColumnDefinitions.Count)
+                {
+                    double w = RootLayoutGrid.ColumnDefinitions[opColIndex].ActualWidth;
+                    if (w > 0)
+                    {
+                        _settingsManager.Current.VerticalOperationsWidth = w;
+                        _settingsManager.Save();
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         /// <summary>モードに対応する保存済み窓サイズを適用する（無ければ既定サイズ）。</summary>
@@ -250,9 +312,10 @@ namespace SCtoolGui
             }
             else
             {
-                // 縦モード既定: 操作群（控えめ幅）＋プレビュー列を「横に追加」した幅。
+                // 縦モード既定: 操作群（控えめ幅）＋スプリッター＋プレビュー列を「横に追加」した幅。
                 // 高さは縦長スクショが大きく見えるよう縦長めに。
-                double defaultWidth = DefaultOperationsColumnWidth + VerticalGap + DefaultVerticalPreviewWidth + RootMargin;
+                double opWidth = s.VerticalOperationsWidth ?? DefaultOperationsColumnWidth;
+                double defaultWidth = opWidth + 6 + DefaultVerticalPreviewWidth + RootMargin;
                 this.Width = s.VerticalWindowWidth ?? defaultWidth;
                 this.Height = s.VerticalWindowHeight ?? 900;
             }

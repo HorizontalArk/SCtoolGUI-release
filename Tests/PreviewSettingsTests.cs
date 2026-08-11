@@ -33,6 +33,7 @@ namespace SCtoolGui.Tests
                 PreviewAutoSwitch = "Force",
                 VerticalWindowWidth = 500,
                 VerticalWindowHeight = 900,
+                VerticalOperationsWidth = 540,
             };
             var back = JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(s))!;
             Assert.Equal("Vertical", back.PreviewOrientation);
@@ -40,6 +41,7 @@ namespace SCtoolGui.Tests
             Assert.Equal("Force", back.PreviewAutoSwitch);
             Assert.Equal(500, back.VerticalWindowWidth);
             Assert.Equal(900, back.VerticalWindowHeight);
+            Assert.Equal(540, back.VerticalOperationsWidth);
         }
 
         [Fact]

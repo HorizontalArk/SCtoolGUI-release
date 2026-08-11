@@ -64,6 +64,9 @@ namespace SCtoolGui
         /// <summary>縦モード時に記憶する窓サイズ（null なら既定サイズ）。</summary>
         public double? VerticalWindowWidth { get; set; } = null;
         public double? VerticalWindowHeight { get; set; } = null;
+
+        /// <summary>縦モード時の操作群カラム幅（スプリッターのドラッグ結果。null なら既定幅）。</summary>
+        public double? VerticalOperationsWidth { get; set; } = null;
     }
 
     public class SettingsManager
