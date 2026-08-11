@@ -1,8 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq; 
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using Velopack;
 
@@ -31,6 +32,8 @@ namespace SCtoolGui
 
             this.Topmost = _settingsManager.Current.AppTopmost;
 
+            ApplyPreviewOrientation(CurrentPreviewMode);
+
             InitializeWindowList();
             InitializeCaptureAndHotKey();
 
@@ -45,7 +48,9 @@ namespace SCtoolGui
                 _settingsManager.Current.WindowLeft = this.Left;
                 _settingsManager.Current.WindowTop = this.Top;
             }
-            
+
+            SaveWindowSizeForCurrentMode();
+
             try
             {
                 // 終了時に、対象ウィンドウへ掛けた最前面固定を解除しておく
@@ -145,9 +150,116 @@ namespace SCtoolGui
             catch { this.Icon = null; }
         }
 
+        private PreviewMode CurrentPreviewMode =>
+            _settingsManager.Current.PreviewOrientation == "Vertical"
+                ? PreviewMode.Vertical : PreviewMode.Horizontal;
+
+        /// <summary>LogCard を現在の親から外す（付け替えの前処理）。</summary>
+        private void DetachLogCard()
+        {
+            if (LogCard.Parent is Panel p) p.Children.Remove(LogCard);
+            else if (LogCard.Parent is Grid g) g.Children.Remove(LogCard);
+        }
+
+        /// <summary>プレビューの向きに応じてルートレイアウトを組み替え、窓サイズを合わせる。</summary>
+        private void ApplyPreviewOrientation(PreviewMode mode)
+        {
+            RootLayoutGrid.RowDefinitions.Clear();
+            RootLayoutGrid.ColumnDefinitions.Clear();
+            DetachLogCard();
+
+            if (mode == PreviewMode.Horizontal)
+            {
+                // 1列3行: 操作群(上) → プレビュー(中・可変) → ログ(下)。従来の並びを維持。
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                RootLayoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(OperationsPanel, 0); Grid.SetColumn(OperationsPanel, 0);
+                Grid.SetRow(PreviewCard, 1); Grid.SetColumn(PreviewCard, 0);
+                PreviewCard.Margin = new Thickness(0);
+
+                // ログはプレビューの下（ウィンドウ最下部）へ
+                RootLayoutGrid.Children.Add(LogCard);
+                Grid.SetRow(LogCard, 2); Grid.SetColumn(LogCard, 0);
+                LogCard.Margin = new Thickness(0, 12, 0, 0);
+            }
+            else
+            {
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                bool previewRight = _settingsManager.Current.VerticalPreviewSide != "Left";
+                // 操作群は幅を抑え、プレビューを広めに
+                var opCol = new ColumnDefinition { Width = new GridLength(360) };
+                var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) };
+
+                if (previewRight)
+                {
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);   // Col0=操作
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol); // Col1=プレビュー
+                    Grid.SetColumn(OperationsPanel, 0); Grid.SetColumn(PreviewCard, 1);
+                    PreviewCard.Margin = new Thickness(12, 0, 0, 0);
+                }
+                else
+                {
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol); // Col0=プレビュー
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);   // Col1=操作
+                    Grid.SetColumn(PreviewCard, 0); Grid.SetColumn(OperationsPanel, 1);
+                    PreviewCard.Margin = new Thickness(0, 0, 12, 0);
+                }
+                Grid.SetRow(OperationsPanel, 0); Grid.SetRow(PreviewCard, 0);
+
+                // 縦モードではログを操作群（縦積み）の末尾に置く
+                OperationsPanel.Children.Add(LogCard);
+                LogCard.Margin = new Thickness(0, 0, 0, 0);
+            }
+
+            ApplyWindowSizeForMode(mode);
+        }
+
+        /// <summary>モードに対応する保存済み窓サイズを適用する（無ければ既定サイズ）。</summary>
+        private void ApplyWindowSizeForMode(PreviewMode mode)
+        {
+            var s = _settingsManager.Current;
+            if (mode == PreviewMode.Horizontal)
+            {
+                if (s.HorizontalWindowWidth.HasValue) this.Width = s.HorizontalWindowWidth.Value;
+                if (s.HorizontalWindowHeight.HasValue) this.Height = s.HorizontalWindowHeight.Value;
+            }
+            else
+            {
+                // 縦モード既定は縦長め（保存が無ければ 560x900 を初期提示）
+                this.Width = s.VerticalWindowWidth ?? 560;
+                this.Height = s.VerticalWindowHeight ?? 900;
+            }
+        }
+
+        /// <summary>現在の窓サイズを現在モードのサイズとして記憶する。</summary>
+        private void SaveWindowSizeForCurrentMode()
+        {
+            if (this.WindowState != WindowState.Normal) return;
+            var s = _settingsManager.Current;
+            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            {
+                s.HorizontalWindowWidth = this.Width; s.HorizontalWindowHeight = this.Height;
+            }
+            else
+            {
+                s.VerticalWindowWidth = this.Width; s.VerticalWindowHeight = this.Height;
+            }
+        }
+
         private void BtnTogglePreviewOrientation_Click(object sender, RoutedEventArgs e)
         {
-            // Task 5 で実装
+            // 切替前に現在モードのサイズを保存
+            SaveWindowSizeForCurrentMode();
+
+            var next = CurrentPreviewMode == PreviewMode.Horizontal
+                ? PreviewMode.Vertical : PreviewMode.Horizontal;
+            _settingsManager.Current.PreviewOrientation =
+                next == PreviewMode.Vertical ? "Vertical" : "Horizontal";
+            ApplyPreviewOrientation(next);
+            _settingsManager.Save();
         }
 
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
