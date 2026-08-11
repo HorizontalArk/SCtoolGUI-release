@@ -43,36 +43,8 @@ namespace SCtoolGui
             var app = new App();
             app.InitializeComponent();
 
-            // 初回セットアップウィザード（インストール版の初回のみ）。
-            // App.InitializeComponent 後に出すことで、テーマ(Fluent)リソースが解決される。
-            try
-            {
-                var setupSettings = new SettingsManager();
-                setupSettings.Load();
-                bool isInstalled = new AppUpdateService().IsInstalled;
-
-                if (SettingsManager.ShouldShowSetupWizard(setupSettings.Current.SetupCompleted, isInstalled))
-                {
-                    var wizard = new SetupWizardWindow(
-                        setupSettings.Current.SaveDirectory,
-                        setupSettings.Current.SaveInWindowNameFolder);
-
-                    if (wizard.ShowDialog() == true)
-                    {
-                        setupSettings.Current.SaveDirectory = wizard.SelectedSaveDirectory;
-                        setupSettings.Current.SaveInWindowNameFolder = wizard.SaveInWindowNameFolder;
-                        setupSettings.Current.SetupCompleted = true;
-                        setupSettings.Save();
-
-                        var choice = ShortcutLocationResolver.Resolve(
-                            wizard.CreateDesktopShortcut, wizard.CreateStartMenuShortcut);
-                        ShortcutInstaller.Create(choice, isInstalled);
-                    }
-                    // キャンセル/閉じるは SetupCompleted=false のまま（次回再表示）
-                }
-            }
-            catch { }
-
+            // 初回セットアップウィザードは、MainWindow を出した直後に
+            // その前面へモーダル表示する（App.OnStartup 内 ShowSetupWizardIfNeeded）。
             app.Run();
         }
     }

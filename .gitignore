@@ -2,6 +2,10 @@
 [Bb]in/
 [Oo]bj/
 
+# Velopack / dotnet publish の生成物（CIで作られる配布物。リポジトリには含めない）
+[Pp]ublish/
+[Rr]eleases/
+
 # Visual Studio / VS Code のローカル設定・キャッシュ
 .vs/
 .vscode/

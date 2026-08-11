@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 
 namespace SCtoolGui
@@ -8,8 +8,11 @@ namespace SCtoolGui
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            try 
+            try
             {
+                // 初回セットアップウィザードは、MainWindow の表示完了後（Loaded）に
+                // その前面へモーダル表示する（MainWindow.ShowSetupWizardIfNeeded）。
+                // 設定は MainWindow 自身の SettingsManager を使うため、保存内容が同セッションに反映される。
                 var mainWindow = new MainWindow();
                 mainWindow.Show();
             }

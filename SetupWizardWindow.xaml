@@ -1,7 +1,8 @@
 <Window x:Class="SCtoolGui.SetupWizardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SCtool のセットアップ" Height="380" Width="460"
+        Title="SCtool のセットアップ" Width="460"
+        SizeToContent="Height" MinHeight="380"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         ShowInTaskbar="True"
         Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">

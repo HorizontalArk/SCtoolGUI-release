@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +32,8 @@
     <Compile Include="..\ShortcutLocationResolver.cs" Link="Source\ShortcutLocationResolver.cs" />
     <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
     <Compile Include="..\PreviewOrientationLogic.cs" Link="Source\PreviewOrientationLogic.cs" />
+    <Compile Include="..\IconIcoWriter.cs" Link="Source\IconIcoWriter.cs" />
+    <Compile Include="..\ShortcutIconUpdater.cs" Link="Source\ShortcutIconUpdater.cs" />
   </ItemGroup>
 
 </Project>
