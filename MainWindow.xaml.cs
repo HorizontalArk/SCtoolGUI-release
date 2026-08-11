@@ -154,6 +154,18 @@ namespace SCtoolGui
             _settingsManager.Current.PreviewOrientation == "Vertical"
                 ? PreviewMode.Vertical : PreviewMode.Horizontal;
 
+        /// <summary>ルート Grid の左右マージン合計（Margin="16" × 2）。</summary>
+        private const double RootMargin = 32;
+        /// <summary>縦モードで操作群とプレビューの間に空ける間隔。</summary>
+        private const double VerticalGap = 12;
+        /// <summary>縦モード初期表示時に追加するプレビュー列の幅。</summary>
+        private const double DefaultVerticalPreviewWidth = 380;
+
+        /// <summary>縦モードで操作群カラムに割り当てる幅。横モードの窓幅と同じ内容幅を保つ
+        /// （＝操作群は狭めずに、プレビューを「横に追加」する設計）。</summary>
+        private double OperationsColumnWidth =>
+            (_settingsManager.Current.HorizontalWindowWidth ?? 820) - RootMargin;
+
         /// <summary>LogCard を現在の親から外す（付け替えの前処理）。</summary>
         private void DetachLogCard()
         {
@@ -189,9 +201,9 @@ namespace SCtoolGui
             {
                 RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 bool previewRight = _settingsManager.Current.VerticalPreviewSide != "Left";
-                // 操作群は幅を抑え、プレビューを広めに
-                var opCol = new ColumnDefinition { Width = new GridLength(360) };
-                var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) };
+                // 操作群は横モードと同じ幅を維持（狭めない）。プレビューは可変幅で「横に追加」する。
+                var opCol = new ColumnDefinition { Width = new GridLength(OperationsColumnWidth) };
+                var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 200 };
 
                 if (previewRight)
                 {
@@ -228,8 +240,10 @@ namespace SCtoolGui
             }
             else
             {
-                // 縦モード既定は縦長め（保存が無ければ 560x900 を初期提示）
-                this.Width = s.VerticalWindowWidth ?? 560;
+                // 縦モード既定: 操作群（横モードと同じ幅）＋プレビュー列を「横に追加」した幅。
+                // 高さは縦長スクショが大きく見えるよう縦長めに。
+                double defaultWidth = OperationsColumnWidth + VerticalGap + DefaultVerticalPreviewWidth + RootMargin;
+                this.Width = s.VerticalWindowWidth ?? defaultWidth;
                 this.Height = s.VerticalWindowHeight ?? 900;
             }
         }
