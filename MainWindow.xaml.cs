@@ -16,6 +16,9 @@ namespace SCtoolGui
         private readonly AppUpdateService _updateService = new AppUpdateService();
         private UpdateInfo? _pendingUpdate;
 
+        /// <summary>Prompt を既に出した対象キー（対象ごと1回まで誘導するため）。</summary>
+        private readonly System.Collections.Generic.HashSet<string> _autoSwitchPromptedTargets = new();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -39,6 +42,13 @@ namespace SCtoolGui
 
             Log("アプリが起動しました。");
             CheckUpdates();
+
+            // 起動時プレビュー撮影で対象ウィンドウを前面化した結果、SCtool が背面へ回ることがある。
+            // コンストラクタ内ではまだ自ウィンドウのHWNDが確定しておらず前面復帰が効かないため、
+            // 表示完了後に一度だけツールを前面へ戻す。
+            Loaded += (s, e) =>
+                Dispatcher.BeginInvoke(new Action(BringToolToForeground),
+                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         protected override void OnClosed(EventArgs e)
@@ -161,10 +171,10 @@ namespace SCtoolGui
         /// <summary>縦モード初期表示時に追加するプレビュー列の幅。</summary>
         private const double DefaultVerticalPreviewWidth = 380;
 
-        /// <summary>縦モードで操作群カラムに割り当てる幅。横モードの窓幅と同じ内容幅を保つ
-        /// （＝操作群は狭めずに、プレビューを「横に追加」する設計）。</summary>
-        private double OperationsColumnWidth =>
-            (_settingsManager.Current.HorizontalWindowWidth ?? 820) - RootMargin;
+        /// <summary>縦モードの操作群カラムの最小幅（キャプチャボタン等が見切れない下限）。</summary>
+        private const double OperationsColumnMinWidth = 360;
+        /// <summary>縦モード初期表示時の操作群カラム幅（下限より少し広め。ここから可変）。</summary>
+        private const double DefaultOperationsColumnWidth = 420;
 
         /// <summary>LogCard を現在の親から外す（付け替えの前処理）。</summary>
         private void DetachLogCard()
@@ -201,8 +211,8 @@ namespace SCtoolGui
             {
                 RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 bool previewRight = _settingsManager.Current.VerticalPreviewSide != "Left";
-                // 操作群は横モードと同じ幅を維持（狭めない）。プレビューは可変幅で「横に追加」する。
-                var opCol = new ColumnDefinition { Width = new GridLength(OperationsColumnWidth) };
+                // 操作群は控えめな既定幅＋最小幅の可変。窓を広げた分はプレビュー側へ回る。
+                var opCol = new ColumnDefinition { Width = new GridLength(DefaultOperationsColumnWidth), MinWidth = OperationsColumnMinWidth };
                 var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 200 };
 
                 if (previewRight)
@@ -240,9 +250,9 @@ namespace SCtoolGui
             }
             else
             {
-                // 縦モード既定: 操作群（横モードと同じ幅）＋プレビュー列を「横に追加」した幅。
+                // 縦モード既定: 操作群（控えめ幅）＋プレビュー列を「横に追加」した幅。
                 // 高さは縦長スクショが大きく見えるよう縦長めに。
-                double defaultWidth = OperationsColumnWidth + VerticalGap + DefaultVerticalPreviewWidth + RootMargin;
+                double defaultWidth = DefaultOperationsColumnWidth + VerticalGap + DefaultVerticalPreviewWidth + RootMargin;
                 this.Width = s.VerticalWindowWidth ?? defaultWidth;
                 this.Height = s.VerticalWindowHeight ?? 900;
             }

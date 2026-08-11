@@ -168,8 +168,48 @@ namespace SCtoolGui
                 }
 
                 CaptureTempPreview(verbose: false);
+
+                MaybeAutoSwitchOrientation(target);
             }
             UpdateWindowStatus();
+        }
+
+        /// <summary>ウィンドウ切替時に、対象画像の向きに応じて自動切替（Off/Prompt/Force）を行う。</summary>
+        private void MaybeAutoSwitchOrientation(TargetInfo target)
+        {
+            if (_lastShownImageOrientation is not PreviewMode imageMode) return;
+
+            var decision = PreviewOrientationLogic.Decide(
+                _settingsManager.Current.PreviewAutoSwitch, CurrentPreviewMode, imageMode);
+
+            if (decision == AutoSwitchDecision.None) return;
+
+            if (decision == AutoSwitchDecision.Switch)
+            {
+                SwitchOrientationTo(imageMode);
+                return;
+            }
+
+            // Prompt: 対象ごとに1回だけ
+            if (_autoSwitchPromptedTargets.Contains(target.Key)) return;
+            _autoSwitchPromptedTargets.Add(target.Key);
+
+            string dir = imageMode == PreviewMode.Vertical ? "縦向き" : "横向き";
+            var ask = MessageBox.Show(
+                $"この画像は{dir}です。プレビューを{dir}に切り替えますか？",
+                "プレビューの向き", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (ask == MessageBoxResult.Yes) SwitchOrientationTo(imageMode);
+        }
+
+        /// <summary>指定モードへ切替（手動切替と同じくサイズ保存→適用→設定保存）。</summary>
+        private void SwitchOrientationTo(PreviewMode mode)
+        {
+            if (CurrentPreviewMode == mode) return;
+            SaveWindowSizeForCurrentMode();
+            _settingsManager.Current.PreviewOrientation =
+                mode == PreviewMode.Vertical ? "Vertical" : "Horizontal";
+            ApplyPreviewOrientation(mode);
+            _settingsManager.Save();
         }
 
         private void RefreshWindowList()
