@@ -391,6 +391,18 @@ namespace SCtoolGui
                 _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
                 ApplyWindowIcon();
 
+                // タスクバー等のアイコンは .lnk の IconLocation が支配するため、ここで .lnk 群も更新する。
+                // 反映は次回起動/サインインで確実化（即時反映は OS のアイコンキャッシュ都合で保証しない）。
+                try
+                {
+                    string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                    if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
+                        ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath);
+                    else
+                        ShortcutIconUpdater.ResetToDefault(exePath);
+                }
+                catch { }
+
                 _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
                 _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
