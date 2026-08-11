@@ -63,17 +63,23 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="16">
+    <!-- ルートは横モード（1列2行: 操作群→プレビュー）と縦モード（2列: 操作群｜プレビュー）を
+         コードビハインドの ApplyPreviewOrientation で組み替える（spec 案2） -->
+    <Grid x:Name="RootLayoutGrid" Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- OperationsPanel -->
+            <RowDefinition Height="*"/>     <!-- PreviewCard -->
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 非プレビューのカード群（更新バナー / ウィンドウ指定 / 操作行 / ログ）を1つに集約。
+             縦モードでは片側に縦積み、横モードでは上段に置く -->
+        <StackPanel x:Name="OperationsPanel" Grid.Row="0" Grid.Column="0">
 
         <!-- 更新バナー -->
-        <Border x:Name="UpdateBanner" Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,12" Padding="12,10" Visibility="Collapsed">
+        <Border x:Name="UpdateBanner" Style="{StaticResource Card}" Margin="0,0,0,12" Padding="12,10" Visibility="Collapsed">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -91,7 +97,7 @@
         </Border>
 
         <!-- ウィンドウ指定 -->
-        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,12">
+        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Style="{StaticResource CardTitle}" Text="ウィンドウ指定"/>
 
@@ -147,7 +153,7 @@
         </Border>
 
         <!-- 操作: 詳細設定 / フォルダ / キャプチャ（同じ行で、キャプチャが右方向いっぱいに伸びる） -->
-        <Grid Grid.Row="2" Margin="0,0,0,12">
+        <Grid Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -185,8 +191,53 @@
             </Button>
         </Grid>
 
-        <!-- プレビュー（主役・全幅） -->
-        <Border Grid.Row="3" Style="{StaticResource Card}">
+        <!-- ログ（コンパクトなストリップ。最新行が常に見える／右のボタンで展開）。
+             OperationsPanel 末尾に集約（横モードのログ位置調整は Task 8 で判断） -->
+        <Border x:Name="LogCard" Style="{StaticResource Card}" Margin="0,0,0,12" Padding="12,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="TxtLog" Grid.Column="0" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"
+                         FontFamily="Consolas" FontSize="11" Background="Transparent" BorderThickness="0" Padding="0"
+                         VerticalAlignment="Top" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Height" Value="42"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=BtnLogExpand}" Value="True">
+                                    <Setter Property="Height" Value="180"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+
+                <ToggleButton x:Name="BtnLogExpand" Grid.Column="1" VerticalAlignment="Top" Margin="8,0,0,0" Padding="6,4"
+                              Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="ログを展開／折りたたむ">
+                    <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" Text="&#xE70D;" RenderTransformOrigin="0.5,0.5">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=BtnLogExpand}" Value="True">
+                                        <Setter Property="RenderTransform">
+                                            <Setter.Value><RotateTransform Angle="180"/></Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </ToggleButton>
+            </Grid>
+        </Border>
+
+        </StackPanel>  <!-- /OperationsPanel -->
+
+        <!-- プレビュー（主役・全幅／縦モードでは片側縦長） -->
+        <Border x:Name="PreviewCard" Grid.Row="1" Style="{StaticResource Card}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -194,7 +245,22 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Style="{StaticResource CardTitle}" Text="プレビュー"/>
+                <!-- 見出し行: タイトル＋[縦⇄横]切替ボタン -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Style="{StaticResource CardTitle}" Text="プレビュー" VerticalAlignment="Center"/>
+                    <Button x:Name="BtnTogglePreviewOrientation" Grid.Column="1" Padding="8,3"
+                            Click="BtnTogglePreviewOrientation_Click"
+                            ToolTip="プレビューの縦／横を切り替えます">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE745;" Margin="0,0,6,0"/>
+                            <TextBlock Text="縦⇄横" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
 
                 <Grid Grid.Row="1" Margin="0,0,0,8">
                     <Viewbox Stretch="Uniform">
@@ -265,48 +331,6 @@
                         </StackPanel>
                     </Button>
                 </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- ログ（下部・全幅のコンパクトなストリップ。最新行が常に見える／右のボタンで展開） -->
-        <Border Grid.Row="4" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="12,6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBox x:Name="TxtLog" Grid.Column="0" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"
-                         FontFamily="Consolas" FontSize="11" Background="Transparent" BorderThickness="0" Padding="0"
-                         VerticalAlignment="Top" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                    <TextBox.Style>
-                        <Style TargetType="TextBox">
-                            <Setter Property="Height" Value="42"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsChecked, ElementName=BtnLogExpand}" Value="True">
-                                    <Setter Property="Height" Value="180"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
-
-                <ToggleButton x:Name="BtnLogExpand" Grid.Column="1" VerticalAlignment="Top" Margin="8,0,0,0" Padding="6,4"
-                              Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="ログを展開／折りたたむ">
-                    <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" Text="&#xE70D;" RenderTransformOrigin="0.5,0.5">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsChecked, ElementName=BtnLogExpand}" Value="True">
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value><RotateTransform Angle="180"/></Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </ToggleButton>
             </Grid>
         </Border>
     </Grid>

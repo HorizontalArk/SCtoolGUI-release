@@ -47,6 +47,26 @@ namespace SCtoolGui
 
         /// <summary>初回セットアップウィザードを完了したか。false の間は初回起動時に表示する。</summary>
         public bool SetupCompleted { get; set; } = false;
+
+        /// <summary>プレビューの向き。"Horizontal"（下部・全幅）/ "Vertical"（片側・縦長）。</summary>
+        public string PreviewOrientation { get; set; } = "Horizontal";
+
+        /// <summary>縦モード時にプレビューを置く側。"Right" / "Left"。</summary>
+        public string VerticalPreviewSide { get; set; } = "Right";
+
+        /// <summary>縦横比による自動切替の動作。"Off" / "Prompt"（確認）/ "Force"（強制）。</summary>
+        public string PreviewAutoSwitch { get; set; } = "Prompt";
+
+        /// <summary>横モード時に記憶する窓サイズ（null なら既定サイズ）。</summary>
+        public double? HorizontalWindowWidth { get; set; } = null;
+        public double? HorizontalWindowHeight { get; set; } = null;
+
+        /// <summary>縦モード時に記憶する窓サイズ（null なら既定サイズ）。</summary>
+        public double? VerticalWindowWidth { get; set; } = null;
+        public double? VerticalWindowHeight { get; set; } = null;
+
+        /// <summary>縦モード時の操作群カラム幅（スプリッターのドラッグ結果。null なら既定幅）。</summary>
+        public double? VerticalOperationsWidth { get; set; } = null;
     }
 
     public class SettingsManager

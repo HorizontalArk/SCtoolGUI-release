@@ -30,6 +30,7 @@
     <Compile Include="..\FileNameUtil.cs" Link="Source\FileNameUtil.cs" />
     <Compile Include="..\ShortcutLocationResolver.cs" Link="Source\ShortcutLocationResolver.cs" />
     <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
+    <Compile Include="..\PreviewOrientationLogic.cs" Link="Source\PreviewOrientationLogic.cs" />
   </ItemGroup>
 
 </Project>

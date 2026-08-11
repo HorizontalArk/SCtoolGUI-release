@@ -1,8 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq; 
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using Velopack;
 
@@ -14,6 +15,9 @@ namespace SCtoolGui
         private DispatcherTimer _statusTimer = new DispatcherTimer();
         private readonly AppUpdateService _updateService = new AppUpdateService();
         private UpdateInfo? _pendingUpdate;
+
+        /// <summary>Prompt を既に出した対象キー（対象ごと1回まで誘導するため）。</summary>
+        private readonly System.Collections.Generic.HashSet<string> _autoSwitchPromptedTargets = new();
 
         public MainWindow()
         {
@@ -31,11 +35,20 @@ namespace SCtoolGui
 
             this.Topmost = _settingsManager.Current.AppTopmost;
 
+            ApplyPreviewOrientation(CurrentPreviewMode);
+
             InitializeWindowList();
             InitializeCaptureAndHotKey();
 
             Log("アプリが起動しました。");
             CheckUpdates();
+
+            // 起動時プレビュー撮影で対象ウィンドウを前面化した結果、SCtool が背面へ回ることがある。
+            // コンストラクタ内ではまだ自ウィンドウのHWNDが確定しておらず前面復帰が効かないため、
+            // 表示完了後に一度だけツールを前面へ戻す。
+            Loaded += (s, e) =>
+                Dispatcher.BeginInvoke(new Action(BringToolToForeground),
+                    System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         }
 
         protected override void OnClosed(EventArgs e)
@@ -45,7 +58,9 @@ namespace SCtoolGui
                 _settingsManager.Current.WindowLeft = this.Left;
                 _settingsManager.Current.WindowTop = this.Top;
             }
-            
+
+            SaveWindowSizeForCurrentMode();
+
             try
             {
                 // 終了時に、対象ウィンドウへ掛けた最前面固定を解除しておく
@@ -145,6 +160,195 @@ namespace SCtoolGui
             catch { this.Icon = null; }
         }
 
+        private PreviewMode CurrentPreviewMode =>
+            _settingsManager.Current.PreviewOrientation == "Vertical"
+                ? PreviewMode.Vertical : PreviewMode.Horizontal;
+
+        /// <summary>ルート Grid の左右マージン合計（Margin="16" × 2）。</summary>
+        private const double RootMargin = 32;
+        /// <summary>縦モード初期表示時に追加するプレビュー列の幅。</summary>
+        private const double DefaultVerticalPreviewWidth = 380;
+
+        /// <summary>縦モードの操作群カラムの最小幅（キャプチャボタン行が見切れない下限）。</summary>
+        private const double OperationsColumnMinWidth = 500;
+        /// <summary>縦モード初期表示時の操作群カラム幅（下限より少し広め。ここから可変）。</summary>
+        private const double DefaultOperationsColumnWidth = 540;
+
+        /// <summary>縦モードで操作群とプレビューの間に置く境界ドラッグ用スプリッター。
+        /// 横モードでは不要なので都度生成・除去する。</summary>
+        private GridSplitter? _verticalSplitter;
+
+        /// <summary>LogCard を現在の親から外す（付け替えの前処理）。</summary>
+        private void DetachLogCard()
+        {
+            if (LogCard.Parent is Panel p) p.Children.Remove(LogCard);
+            else if (LogCard.Parent is Grid g) g.Children.Remove(LogCard);
+        }
+
+        /// <summary>スプリッターがあればルートから外す。</summary>
+        private void RemoveVerticalSplitter()
+        {
+            if (_verticalSplitter != null)
+            {
+                RootLayoutGrid.Children.Remove(_verticalSplitter);
+                _verticalSplitter = null;
+            }
+        }
+
+        /// <summary>プレビューの向きに応じてルートレイアウトを組み替え、窓サイズを合わせる。</summary>
+        private void ApplyPreviewOrientation(PreviewMode mode)
+        {
+            RootLayoutGrid.RowDefinitions.Clear();
+            RootLayoutGrid.ColumnDefinitions.Clear();
+            DetachLogCard();
+            RemoveVerticalSplitter();
+
+            if (mode == PreviewMode.Horizontal)
+            {
+                // 1列3行: 操作群(上) → プレビュー(中・可変) → ログ(下)。従来の並びを維持。
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                RootLayoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(OperationsPanel, 0); Grid.SetColumn(OperationsPanel, 0);
+                Grid.SetRow(PreviewCard, 1); Grid.SetColumn(PreviewCard, 0);
+                PreviewCard.Margin = new Thickness(0);
+
+                // ログはプレビューの下（ウィンドウ最下部）へ
+                RootLayoutGrid.Children.Add(LogCard);
+                Grid.SetRow(LogCard, 2); Grid.SetColumn(LogCard, 0);
+                LogCard.Margin = new Thickness(0, 12, 0, 0);
+            }
+            else
+            {
+                // 縦モードは3列: 操作群 / スプリッター(境界ドラッグ) / プレビュー。
+                // 操作群列はピクセル幅（保存値または既定）で、スプリッターで自由に変えられる。
+                RootLayoutGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                bool previewRight = _settingsManager.Current.VerticalPreviewSide != "Left";
+
+                double opWidth = _settingsManager.Current.VerticalOperationsWidth ?? DefaultOperationsColumnWidth;
+                var opCol = new ColumnDefinition { Width = new GridLength(opWidth), MinWidth = OperationsColumnMinWidth };
+                var splitterCol = new ColumnDefinition { Width = GridLength.Auto };
+                var prevCol = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 200 };
+
+                _verticalSplitter = new GridSplitter
+                {
+                    Width = 6,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    Background = System.Windows.Media.Brushes.Transparent,
+                    ResizeBehavior = GridResizeBehavior.PreviousAndNext,
+                    ShowsPreview = true,
+                    Cursor = System.Windows.Input.Cursors.SizeWE,
+                    ToolTip = "ドラッグで操作群とプレビューの幅を調整"
+                };
+                _verticalSplitter.DragCompleted += VerticalSplitter_DragCompleted;
+
+                if (previewRight)
+                {
+                    // Col0=操作 / Col1=スプリッター / Col2=プレビュー
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(splitterCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol);
+                    Grid.SetColumn(OperationsPanel, 0);
+                    Grid.SetColumn(_verticalSplitter, 1);
+                    Grid.SetColumn(PreviewCard, 2);
+                    PreviewCard.Margin = new Thickness(6, 0, 0, 0);
+                }
+                else
+                {
+                    // Col0=プレビュー / Col1=スプリッター / Col2=操作
+                    RootLayoutGrid.ColumnDefinitions.Add(prevCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(splitterCol);
+                    RootLayoutGrid.ColumnDefinitions.Add(opCol);
+                    Grid.SetColumn(PreviewCard, 0);
+                    Grid.SetColumn(_verticalSplitter, 1);
+                    Grid.SetColumn(OperationsPanel, 2);
+                    PreviewCard.Margin = new Thickness(0, 0, 6, 0);
+                }
+                Grid.SetRow(OperationsPanel, 0);
+                Grid.SetRow(_verticalSplitter, 0);
+                Grid.SetRow(PreviewCard, 0);
+                RootLayoutGrid.Children.Add(_verticalSplitter);
+
+                // 縦モードではログを操作群（縦積み）の末尾に置く
+                OperationsPanel.Children.Add(LogCard);
+                LogCard.Margin = new Thickness(0, 0, 0, 0);
+            }
+
+            ApplyWindowSizeForMode(mode);
+        }
+
+        /// <summary>スプリッターのドラッグ完了時、操作群カラムの実幅を保存する。</summary>
+        private void VerticalSplitter_DragCompleted(object sender,
+            System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            // ドラッグ直後は列の ActualWidth がまだ更新前のことがあるため、
+            // レイアウト確定後（Loaded 相当の低優先度）に読み取って保存する。
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                int opColIndex = Grid.GetColumn(OperationsPanel);
+                if (opColIndex >= 0 && opColIndex < RootLayoutGrid.ColumnDefinitions.Count)
+                {
+                    double w = RootLayoutGrid.ColumnDefinitions[opColIndex].ActualWidth;
+                    if (w > 0)
+                    {
+                        _settingsManager.Current.VerticalOperationsWidth = w;
+                        _settingsManager.Save();
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        /// <summary>モードに対応する保存済み窓サイズを適用する（無ければ既定サイズ）。</summary>
+        private void ApplyWindowSizeForMode(PreviewMode mode)
+        {
+            var s = _settingsManager.Current;
+            if (mode == PreviewMode.Horizontal)
+            {
+                if (s.HorizontalWindowWidth.HasValue) this.Width = s.HorizontalWindowWidth.Value;
+                if (s.HorizontalWindowHeight.HasValue) this.Height = s.HorizontalWindowHeight.Value;
+            }
+            else
+            {
+                // 縦モード既定: 操作群（控えめ幅）＋スプリッター＋プレビュー列を「横に追加」した幅。
+                // 高さは縦長スクショが大きく見えるよう縦長めに。
+                double opWidth = s.VerticalOperationsWidth ?? DefaultOperationsColumnWidth;
+                double defaultWidth = opWidth + 6 + DefaultVerticalPreviewWidth + RootMargin;
+                this.Width = s.VerticalWindowWidth ?? defaultWidth;
+                this.Height = s.VerticalWindowHeight ?? 900;
+            }
+        }
+
+        /// <summary>現在の窓サイズを現在モードのサイズとして記憶する。</summary>
+        private void SaveWindowSizeForCurrentMode()
+        {
+            if (this.WindowState != WindowState.Normal) return;
+            var s = _settingsManager.Current;
+            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            {
+                s.HorizontalWindowWidth = this.Width; s.HorizontalWindowHeight = this.Height;
+            }
+            else
+            {
+                s.VerticalWindowWidth = this.Width; s.VerticalWindowHeight = this.Height;
+            }
+        }
+
+        private void BtnTogglePreviewOrientation_Click(object sender, RoutedEventArgs e)
+        {
+            // 切替前に現在モードのサイズを保存
+            SaveWindowSizeForCurrentMode();
+
+            var next = CurrentPreviewMode == PreviewMode.Horizontal
+                ? PreviewMode.Vertical : PreviewMode.Horizontal;
+            _settingsManager.Current.PreviewOrientation =
+                next == PreviewMode.Vertical ? "Vertical" : "Horizontal";
+            ApplyPreviewOrientation(next);
+            _settingsManager.Save();
+        }
+
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
         {
             bool wasAlwaysAdmin = _settingsManager.Current.AlwaysRunAsAdmin;
@@ -162,7 +366,9 @@ namespace SCtoolGui
                 _settingsManager.Current.ShutterVolume,
                 _settingsManager.Current.AlwaysRunAsAdmin,
                 _settingsManager.Current.Theme,
-                _settingsManager.Current.IconPath) { Owner = this };
+                _settingsManager.Current.IconPath,
+                _settingsManager.Current.VerticalPreviewSide,
+                _settingsManager.Current.PreviewAutoSwitch) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -184,6 +390,11 @@ namespace SCtoolGui
 
                 _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
                 ApplyWindowIcon();
+
+                _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
+                _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
+                // 縦時の左右が変わった場合、縦モードなら再適用して反映する
+                if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 
                 this.Topmost = _settingsManager.Current.AppTopmost;
 

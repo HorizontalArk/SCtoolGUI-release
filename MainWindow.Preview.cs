@@ -13,6 +13,9 @@ namespace SCtoolGui
         private bool _isFinalOutputMode = false;
         private bool _isDraggingCutLine = false;
 
+        /// <summary>最後に ShowPreview した画像の向き（自動切替の判定材料）。</summary>
+        private PreviewMode? _lastShownImageOrientation;
+
         private static readonly string TempPreviewPath = Path.Combine(Path.GetTempPath(), "SCtool_temp_preview.jpg");
 
         /// <summary>最後に保存した画像が実際にディスク上に存在するか。</summary>
@@ -136,6 +139,12 @@ namespace SCtoolGui
             TxtDeleteMessage.Visibility = Visibility.Collapsed;
 
             ImgPreview.Source = LoadBitmap(filePath);
+
+            if (ImgPreview.Source is BitmapSource bmp)
+            {
+                _lastShownImageOrientation =
+                    PreviewOrientationLogic.DetectImageOrientation(bmp.PixelWidth, bmp.PixelHeight);
+            }
 
             _isTempPreviewMode = isTempPreview;
             _isFinalOutputMode = isFinalOutput;

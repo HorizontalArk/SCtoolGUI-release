@@ -20,6 +20,18 @@ namespace SCtoolGui
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
+        [DllImport("user32.dll")]
+        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll")]
+        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("user32.dll")]
+        private static extern bool BringWindowToTop(IntPtr hWnd);
+
         public struct RECT { public int Left, Top, Right, Bottom; }
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
 
@@ -51,7 +63,30 @@ namespace SCtoolGui
         {
             if (GetForegroundWindow() == hwnd) return true;
 
-            SetForegroundWindow(hwnd);
+            // SetForegroundWindow は、直前に別アプリがフォアグラウンドを握っている状態では
+            // OS のフォアグラウンドロックにより無視される。そこで現在の前面スレッドへ一時的に
+            // AttachThreadInput してから前面化することで、確実に対象を前面へ出す。
+            // （自ウィンドウ復帰の BringToolToForeground と同じ手法）
+            IntPtr fg = GetForegroundWindow();
+            uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
+            uint thisThread = GetCurrentThreadId();
+
+            bool attached = false;
+            try
+            {
+                if (fgThread != thisThread && fgThread != 0)
+                {
+                    attached = AttachThreadInput(thisThread, fgThread, true);
+                }
+
+                // 最大化状態を通常サイズへ戻してしまわないよう ShowWindow(SW_RESTORE) は使わない。
+                BringWindowToTop(hwnd);
+                SetForegroundWindow(hwnd);
+            }
+            finally
+            {
+                if (attached) AttachThreadInput(thisThread, fgThread, false);
+            }
 
             // 固定待ちではなく実際に前面になるまで待つ。多くの場合250msより短く済む。
             var sw = System.Diagnostics.Stopwatch.StartNew();
