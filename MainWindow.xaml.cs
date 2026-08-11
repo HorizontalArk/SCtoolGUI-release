@@ -145,6 +145,11 @@ namespace SCtoolGui
             catch { this.Icon = null; }
         }
 
+        private void BtnTogglePreviewOrientation_Click(object sender, RoutedEventArgs e)
+        {
+            // Task 5 で実装
+        }
+
         private void BtnSettings_Click(object sender, RoutedEventArgs e)
         {
             bool wasAlwaysAdmin = _settingsManager.Current.AlwaysRunAsAdmin;
