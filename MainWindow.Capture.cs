@@ -26,14 +26,6 @@ namespace SCtoolGui
         {
             base.OnSourceInitialized(e);
             RegisterHotKey();
-
-            // コンストラクタ時点では HWND 未生成で WM_SETICON を送れないため、
-            // ここ（HWND 生成後）で保留されていたタスクバーアイコン適用を確定させる。
-            if (_iconApplyPending)
-            {
-                _iconApplyPending = false;
-                ApplyWindowIcon();
-            }
         }
 
         private void RegisterHotKey()
