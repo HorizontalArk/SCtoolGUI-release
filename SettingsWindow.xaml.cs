@@ -23,7 +23,10 @@ namespace SCtoolGui
 
         public string ResultIconPath { get; private set; } = "";
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath)
+        public string ResultVerticalPreviewSide { get; private set; } = "Right";
+        public string ResultPreviewAutoSwitch { get; private set; } = "Prompt";
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -56,6 +59,14 @@ namespace SCtoolGui
             CmbTheme.SelectedIndex = theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
 
             TxtIconPath.Text = iconPath;
+
+            CmbVerticalSide.SelectedIndex = verticalPreviewSide == "Left" ? 1 : 0;
+            CmbAutoSwitch.SelectedIndex = previewAutoSwitch switch
+            {
+                "Off" => 0,
+                "Force" => 2,
+                _ => 1, // Prompt
+            };
         }
 
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
@@ -126,6 +137,14 @@ namespace SCtoolGui
             ResultTheme = CmbTheme.SelectedIndex switch { 1 => "Light", 2 => "Dark", _ => "System" };
 
             ResultIconPath = TxtIconPath.Text;
+
+            ResultVerticalPreviewSide = CmbVerticalSide.SelectedIndex == 1 ? "Left" : "Right";
+            ResultPreviewAutoSwitch = CmbAutoSwitch.SelectedIndex switch
+            {
+                0 => "Off",
+                2 => "Force",
+                _ => "Prompt",
+            };
 
             this.DialogResult = true;
         }

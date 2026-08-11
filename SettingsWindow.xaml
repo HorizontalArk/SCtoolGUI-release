@@ -47,6 +47,23 @@
                 </ComboBox>
             </StackPanel>
 
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                <TextBlock Text="縦モード時のプレビュー位置:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="CmbVerticalSide" Width="120">
+                    <ComboBoxItem Content="右"/>
+                    <ComboBoxItem Content="左"/>
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
+                <TextBlock Text="縦横の自動切替:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="CmbAutoSwitch" Width="200">
+                    <ComboBoxItem Content="切り替えない"/>
+                    <ComboBoxItem Content="確認して切り替え"/>
+                    <ComboBoxItem Content="自動で切り替え"/>
+                </ComboBox>
+            </StackPanel>
+
             <TextBlock Text="アイコン（空欄で既定）:" Margin="0,0,0,5"/>
             <Grid Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
