@@ -43,17 +43,26 @@ namespace SCtoolGui
         {
             if (string.IsNullOrEmpty(userImagePath) || !File.Exists(userImagePath)) return;
             if (!IconIcoWriter.TryWriteIco(userImagePath, UserIcoPath, out _)) return;
-            UpdateAll($"{UserIcoPath},0");
+            // すべての .lnk を、変換した共通の .ico に向ける。
+            UpdateAll(_ => $"{UserIcoPath},0");
         }
 
-        /// <summary>既知 .lnk の IconLocation を exe 埋め込み既定（app.ico）へ戻す。</summary>
-        public static void ResetToDefault(string exePath)
+        /// <summary>
+        /// 既知 .lnk の IconLocation を、その .lnk 自身のターゲット exe（埋め込み app.ico）へ戻す。
+        /// 現在のプロセスパス（stub や開発ビルドでは current 配下と異なりうる）ではなく、
+        /// 各ショートカットが実際に起動する exe を使うことで、常に正しい既定アイコンへ戻す。
+        /// </summary>
+        public static void ResetToDefault()
         {
-            if (string.IsNullOrEmpty(exePath)) return;
-            UpdateAll($"{exePath},0");
+            // 各 .lnk のターゲット exe を読み、その ",0"（埋め込み既定）を指す。
+            UpdateAll(sc => { string target = sc.TargetPath; return string.IsNullOrEmpty(target) ? null : $"{target},0"; });
         }
 
-        private static void UpdateAll(string iconLocation)
+        /// <summary>
+        /// 存在する既知 .lnk それぞれについて、iconLocationFor が返す IconLocation を設定する。
+        /// iconLocationFor が null を返した .lnk はスキップする。1 つでも更新したら SHChangeNotify する。
+        /// </summary>
+        private static void UpdateAll(Func<dynamic, string?> iconLocationFor)
         {
             var targets = ShortcutIconTargets.Resolve(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -65,25 +74,36 @@ namespace SCtoolGui
                 if (!File.Exists(lnk)) continue; // ピン留め等していない場所はスキップ（正常系）
                 try
                 {
-                    SetShortcutIcon(lnk, iconLocation);
-                    any = true;
+                    if (SetShortcutIcon(lnk, iconLocationFor)) any = true;
                 }
                 catch { /* 1 つ失敗しても他を試す */ }
             }
             if (any) SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
         }
 
-        /// <summary>WScript.Shell 経由で .lnk の IconLocation を設定して保存する。</summary>
-        private static void SetShortcutIcon(string lnkPath, string iconLocation)
+        /// <summary>
+        /// WScript.Shell 経由で .lnk を開き、iconLocationFor が返す IconLocation を設定して保存する。
+        /// 設定した場合 true。iconLocationFor が null を返したら何もせず false。
+        /// </summary>
+        private static bool SetShortcutIcon(string lnkPath, Func<dynamic, string?> iconLocationFor)
         {
             Type shellType = Type.GetTypeFromProgID("WScript.Shell")!;
             dynamic shell = Activator.CreateInstance(shellType)!;
             try
             {
                 dynamic sc = shell.CreateShortcut(lnkPath);
-                sc.IconLocation = iconLocation;
-                sc.Save();
-                Marshal.FinalReleaseComObject(sc);
+                try
+                {
+                    string? iconLocation = iconLocationFor(sc);
+                    if (iconLocation == null) return false;
+                    sc.IconLocation = iconLocation;
+                    sc.Save();
+                    return true;
+                }
+                finally
+                {
+                    Marshal.FinalReleaseComObject(sc);
+                }
             }
             finally
             {

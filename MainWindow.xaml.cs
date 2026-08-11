@@ -43,12 +43,72 @@ namespace SCtoolGui
             Log("アプリが起動しました。");
             CheckUpdates();
 
-            // 起動時プレビュー撮影で対象ウィンドウを前面化した結果、SCtool が背面へ回ることがある。
-            // コンストラクタ内ではまだ自ウィンドウのHWNDが確定しておらず前面復帰が効かないため、
-            // 表示完了後に一度だけツールを前面へ戻す。
-            Loaded += (s, e) =>
+            // 表示完了後に、初回セットアップウィザードと起動時前面復帰を順に行う。
+            Loaded += OnMainWindowLoaded;
+        }
+
+        /// <summary>
+        /// メイン表示後の初期処理。初回セットアップウィザードを（必要なら）メインの前面に
+        /// モーダル表示し、その後に起動時前面復帰を行う。
+        ///
+        /// ウィザードを出す場合は、前面復帰（<see cref="BringToolToForeground"/>）を行わない。
+        /// 前面復帰はメインを前面へ持ち上げるため、モーダル中に走るとウィザードが背面へ回ってしまう。
+        /// ウィザード終了時点でメインは前面に戻っているため、その場合の前面復帰は不要でもある。
+        /// </summary>
+        private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnMainWindowLoaded; // 一度きり
+
+            bool wizardShown = ShowSetupWizardIfNeeded();
+
+            if (!wizardShown)
+            {
+                // 起動時プレビュー撮影で対象ウィンドウを前面化した結果 SCtool が背面へ回ることがあるため、
+                // 表示完了後に一度だけツールを前面へ戻す（HWND 確定後でないと効かないためここで行う）。
                 Dispatcher.BeginInvoke(new Action(BringToolToForeground),
                     System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            }
+        }
+
+        /// <summary>
+        /// 未完了かつインストール版のときだけ、初回セットアップウィザードをメインの前面に
+        /// モーダル表示する。完了時は（メイン自身の設定に）保存し、選択に従ってショートカットを作成する。
+        /// 表示したら true。設定は MainWindow 自身の <see cref="_settingsManager"/> を使うため、
+        /// 保存内容はこの起動セッションのメインにも即反映される。
+        /// </summary>
+        private bool ShowSetupWizardIfNeeded()
+        {
+            try
+            {
+                bool isInstalled = _updateService.IsInstalled;
+                if (!SettingsManager.ShouldShowSetupWizard(_settingsManager.Current.SetupCompleted, isInstalled))
+                    return false;
+
+                var wizard = new SetupWizardWindow(
+                    _settingsManager.Current.SaveDirectory,
+                    _settingsManager.Current.SaveInWindowNameFolder)
+                {
+                    Owner = this,
+                };
+
+                if (wizard.ShowDialog() == true)
+                {
+                    _settingsManager.Current.SaveDirectory = wizard.SelectedSaveDirectory;
+                    _settingsManager.Current.SaveInWindowNameFolder = wizard.SaveInWindowNameFolder;
+                    _settingsManager.Current.SetupCompleted = true;
+                    _settingsManager.Save();
+
+                    // 保存先表示など、変更が UI に効く箇所を更新しておく。
+                    UpdateCurrentSavePathDisplay();
+
+                    var choice = ShortcutLocationResolver.Resolve(
+                        wizard.CreateDesktopShortcut, wizard.CreateStartMenuShortcut);
+                    ShortcutInstaller.Create(choice, isInstalled);
+                }
+                // キャンセル/閉じるは SetupCompleted=false のまま（次回再表示）
+                return true;
+            }
+            catch { return false; }
         }
 
         protected override void OnClosed(EventArgs e)
@@ -395,11 +455,10 @@ namespace SCtoolGui
                 // 反映は次回起動/サインインで確実化（即時反映は OS のアイコンキャッシュ都合で保証しない）。
                 try
                 {
-                    string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
                     if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
                         ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath);
                     else
-                        ShortcutIconUpdater.ResetToDefault(exePath);
+                        ShortcutIconUpdater.ResetToDefault();
                 }
                 catch { }
 
