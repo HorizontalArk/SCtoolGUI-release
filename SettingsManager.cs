@@ -31,7 +31,13 @@ namespace SCtoolGui
         public bool SaveInWindowNameFolder { get; set; } = false;
         public bool ResetSettingsOnWindowChange { get; set; } = true;
         public bool AutoCopyClipboard { get; set; } = true;
-        
+
+        /// <summary>ファイル名に実ウィンドウタイトルを使うか。false なら登録名（従来どおり）。フォルダ名は常に登録名。</summary>
+        public bool UseWindowTitleForFileName { get; set; } = false;
+
+        /// <summary>コピーボタンの既定対象。"LastSaved"（最後に保存した画像）/ "TempPreview"（一時プレビュー）。</summary>
+        public string CopySource { get; set; } = "LastSaved";
+
         public bool PlayShutterSound { get; set; } = true;
         // ★追加: シャッター音量 (0.0 ～ 1.0)
         public double ShutterVolume { get; set; } = 1.0;
