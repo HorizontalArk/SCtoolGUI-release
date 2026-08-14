@@ -32,9 +32,19 @@
             
             <CheckBox x:Name="ChkSaveInWindowFolder" Content="ウィンドウ名のフォルダに分類して保存する" Margin="0,0,0,10"/>
 
+            <CheckBox x:Name="ChkUseWindowTitleForFileName" Content="ファイル名に実際のウィンドウタイトルを使う（OFFなら登録名／フォルダ名は常に登録名）" Margin="0,0,0,10"/>
+
             <CheckBox x:Name="ChkResetSettingsOnWindowChange" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
             <CheckBox x:Name="ChkAutoCopyClipboard" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                <TextBlock Text="コピーの既定対象:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="CmbCopySource" Width="200">
+                    <ComboBoxItem Content="最後に保存した画像"/>
+                    <ComboBoxItem Content="一時プレビュー"/>
+                </ComboBox>
+            </StackPanel>
 
             <CheckBox x:Name="ChkAlwaysRunAsAdmin" Content="常に管理者として起動する（管理者権限のアプリを常用する場合）" Margin="0,0,0,10"/>
 

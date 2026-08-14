@@ -26,7 +26,10 @@ namespace SCtoolGui
         public string ResultVerticalPreviewSide { get; private set; } = "Right";
         public string ResultPreviewAutoSwitch { get; private set; } = "Prompt";
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch)
+        public bool ResultUseWindowTitleForFileName { get; private set; }
+        public string ResultCopySource { get; private set; } = "LastSaved";
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -67,6 +70,9 @@ namespace SCtoolGui
                 "Force" => 2,
                 _ => 1, // Prompt
             };
+
+            ChkUseWindowTitleForFileName.IsChecked = useWindowTitleForFileName;
+            CmbCopySource.SelectedIndex = copySource == "TempPreview" ? 1 : 0;
         }
 
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
@@ -145,6 +151,9 @@ namespace SCtoolGui
                 2 => "Force",
                 _ => "Prompt",
             };
+
+            ResultUseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
+            ResultCopySource = CmbCopySource.SelectedIndex == 1 ? "TempPreview" : "LastSaved";
 
             this.DialogResult = true;
         }

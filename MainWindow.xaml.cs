@@ -455,7 +455,9 @@ namespace SCtoolGui
                 _settingsManager.Current.Theme,
                 _settingsManager.Current.IconPath,
                 _settingsManager.Current.VerticalPreviewSide,
-                _settingsManager.Current.PreviewAutoSwitch) { Owner = this };
+                _settingsManager.Current.PreviewAutoSwitch,
+                _settingsManager.Current.UseWindowTitleForFileName,
+                _settingsManager.Current.CopySource) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -482,6 +484,9 @@ namespace SCtoolGui
 
                 _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
                 _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
+
+                _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
+                _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
                 if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 
