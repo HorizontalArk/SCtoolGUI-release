@@ -67,7 +67,8 @@
             
             <CheckBox x:Name="ChkSaveInWindowFolder" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ名のフォルダに分類して保存する" Margin="0,0,0,10"/>
 
-            <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う（OFFなら登録名／フォルダ名は常に登録名）" Margin="0,0,0,10"/>
+            <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う" Margin="0,0,0,10"
+                      ToolTip="OFFなら登録名（表示名）をファイル名に使います。フォルダ名は設定に関わらず常に登録名です。"/>
 
             <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
@@ -81,7 +82,8 @@
                 </ComboBox>
             </StackPanel>
 
-            <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する（管理者権限のアプリを常用する場合）" Margin="0,0,0,10"/>
+            <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する" Margin="0,0,0,10"
+                      ToolTip="管理者権限で動くアプリを常用する場合に有効にします。"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
                 <TextBlock Text="テーマ:" VerticalAlignment="Center" Margin="0,0,10,0"/>
