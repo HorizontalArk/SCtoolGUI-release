@@ -100,24 +100,30 @@ namespace SCtoolGui
                     string baseDir = _settingsManager.Current.SaveDirectory;
                     string targetDir = baseDir;
 
-                    // ファイル名・フォルダ名は、変化しうるタイトルではなく表示名を使う
-                    string safeName = CurrentFolderName;
+                    // フォルダ名は常に登録名（表示名）を使う。フォルダ振り分けはタイトル変化で乱れさせない。
+                    string folderName = CurrentFolderName;
 
                     if (_settingsManager.Current.SaveInWindowNameFolder)
                     {
-                        targetDir = Path.Combine(baseDir, safeName);
+                        targetDir = Path.Combine(baseDir, folderName);
                     }
 
                     if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
-                    string fullPath = Path.Combine(targetDir, $"{safeName}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg");
+                    // ファイル名ベースは設定に応じて登録名か実ウィンドウタイトルを使う。
+                    string fileBase = FileBaseNameResolver.Resolve(
+                        _settingsManager.Current.UseWindowTitleForFileName,
+                        selected.Title,
+                        folderName);
+
+                    string fullPath = Path.Combine(targetDir, $"{fileBase}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg");
                     int topCut = CurrentCutValue;
 
                     ScreenCapture.SaveWindowCaptureWithExif(selected.Handle, fullPath, CapturePreviewPath, topCut);
                     _lastCapturedPath = fullPath;
 
                     if (CurrentTarget is TargetInfo target) target.TopCut = topCut;
-                    SaveAndLog($"【成功】 {safeName} -> {fullPath}");
+                    SaveAndLog($"【成功】 {fileBase} -> {fullPath}");
 
                     if (_settingsManager.Current.PlayShutterSound)
                     {
