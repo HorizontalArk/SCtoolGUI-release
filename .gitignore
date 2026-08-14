@@ -24,3 +24,6 @@ update_log.txt
 
 # 更新時にアプリが自動生成するバッチ（ローカル絶対パスを含むため追跡しない）
 auto_restart_updater.bat
+
+# 設計・実装計画ドキュメント（開発用メモ。配布・共有対象にしない）
+docs/superpowers/
