@@ -99,7 +99,7 @@ namespace SCtoolGui
             double opacity = enabled ? 1.0 : 0.4;
             Cursor cursor = enabled ? Cursors.Arrow : Cursors.No;
 
-            foreach (var btn in new[] { BtnOpenFile, BtnCopyClipboard, BtnDeleteFile })
+            foreach (var btn in new[] { BtnOpenFile, BtnCopyClipboard, BtnCopyDropdown, BtnDeleteFile })
             {
                 if (btn == null) continue;
                 btn.Opacity = opacity;
@@ -153,6 +153,7 @@ namespace SCtoolGui
 
             BtnOpenFile.IsEnabled = true;
             BtnCopyClipboard.IsEnabled = true;
+            BtnCopyDropdown.IsEnabled = true;
             BtnDeleteFile.IsEnabled = true;
 
             // 一時プレビュー中かではなく、画像が存在するかどうかでボタンの見た目を変える
@@ -192,23 +193,54 @@ namespace SCtoolGui
             OpenImage(_lastCapturedPath);
         }
 
+        // スプリットボタン左「コピー」本体：詳細設定の既定対象でコピーする。
         private void BtnCopyClipboard_Click(object sender, RoutedEventArgs e)
         {
-            if (!HasLastCapture) return;
-            CopyPreviewToClipboard(isAuto: false);
+            var target = CopyTargetResolver.Parse(_settingsManager.Current.CopySource);
+            CopyToClipboard(target, isAuto: false);
         }
 
-        private void CopyPreviewToClipboard(bool isAuto)
+        // スプリットボタン ▽ メニュー「一時プレビューをコピー」
+        private void MenuCopyTempPreview_Click(object sender, RoutedEventArgs e)
+            => CopyToClipboard(CopyTarget.TempPreview, isAuto: false);
+
+        // スプリットボタン ▽ メニュー「最後に保存した画像をコピー」
+        private void MenuCopyLastSaved_Click(object sender, RoutedEventArgs e)
+            => CopyToClipboard(CopyTarget.LastSaved, isAuto: false);
+
+        /// <summary>指定した対象の画像をクリップボードにコピーする。対象が無ければ警告ログを出す。</summary>
+        private void CopyToClipboard(CopyTarget target, bool isAuto)
         {
             try
             {
-                if (HasLastCapture)
+                string? path = CopyTargetResolver.Resolve(
+                    target,
+                    TempPreviewPath, File.Exists(TempPreviewPath),
+                    _lastCapturedPath, HasLastCapture);
+
+                if (path == null)
                 {
-                    Clipboard.SetImage(LoadBitmap(_lastCapturedPath));
-                    Log(isAuto ? "画像をクリップボードに自動コピーしました。" : "画像をクリップボードにコピーしました。");
+                    Log(target == CopyTarget.TempPreview
+                        ? "一時プレビューがまだありません。"
+                        : "保存された画像がまだありません。");
+                    return;
                 }
+
+                Clipboard.SetImage(LoadBitmap(path));
+                Log(isAuto ? "画像をクリップボードに自動コピーしました。" : "画像をクリップボードにコピーしました。");
             }
             catch (Exception ex) { Log($"【エラー】 コピー失敗: {ex.Message}"); }
+        }
+
+        // スプリットボタン右「▽」：付属の ContextMenu をボタン位置に開く。
+        private void BtnCopyDropdown_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn && btn.ContextMenu != null)
+            {
+                btn.ContextMenu.PlacementTarget = btn;
+                btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                btn.ContextMenu.IsOpen = true;
+            }
         }
 
         private void BtnDeleteFile_Click(object sender, RoutedEventArgs e)

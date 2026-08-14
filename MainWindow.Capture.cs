@@ -135,7 +135,8 @@ namespace SCtoolGui
 
                     if (_settingsManager.Current.AutoCopyClipboard)
                     {
-                        CopyPreviewToClipboard(isAuto: true);
+                        // 撮影直後は保存した本番画像が正しいので、設定に依らず LastSaved を対象にする。
+                        CopyToClipboard(CopyTarget.LastSaved, isAuto: true);
                     }
 
                 } catch (Exception ex) { Log($"【エラー】 {ex.Message}"); }
