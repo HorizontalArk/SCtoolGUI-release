@@ -35,6 +35,7 @@
     <Compile Include="..\IconIcoWriter.cs" Link="Source\IconIcoWriter.cs" />
     <Compile Include="..\ShortcutIconUpdater.cs" Link="Source\ShortcutIconUpdater.cs" />
     <Compile Include="..\FileBaseNameResolver.cs" Link="Source\FileBaseNameResolver.cs" />
+    <Compile Include="..\CopyTargetResolver.cs" Link="Source\CopyTargetResolver.cs" />
   </ItemGroup>
 
 </Project>
