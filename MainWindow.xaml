@@ -352,5 +352,24 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- アップデート適用中の操作ロック用オーバーレイ。ボタン押下直後に即表示し、
+             DL〜再起動までメイン操作を覆って無効化する。既定は非表示。 -->
+        <Border x:Name="UpdateOverlay" Grid.Row="0" Grid.RowSpan="2" Visibility="Collapsed"
+                Background="#B0000000" Panel.ZIndex="100">
+            <Border Style="{StaticResource Card}" MaxWidth="360" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <StackPanel Margin="8">
+                    <TextBlock Text="アップデートを準備しています…" FontWeight="SemiBold" FontSize="14"
+                               HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                    <TextBlock Text="完了すると自動で再起動します。しばらくお待ちください。"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12"
+                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <ProgressBar x:Name="UpdateProgressBar" Height="8" Minimum="0" Maximum="100" Value="0"/>
+                    <TextBlock x:Name="TxtUpdateProgress" Text="ダウンロード中… 0%"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>

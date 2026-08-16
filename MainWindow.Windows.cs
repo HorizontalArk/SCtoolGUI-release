@@ -368,12 +368,19 @@ namespace SCtoolGui
         {
             string baseDir = _settingsManager.Current.SaveDirectory;
 
-            string displayPath = baseDir;
+            string folderName = CurrentFolderName;
+
+            string dirPath = baseDir;
             if (_settingsManager.Current.SaveInWindowNameFolder)
             {
-                // タイトルではなく表示名を使うため、アプリ側でタイトルが変わっても保存先は一定に保たれる
-                displayPath = System.IO.Path.Combine(baseDir, CurrentFolderName);
+                // フォルダ名は登録名を使うため、アプリ側でタイトルが変わっても保存先フォルダは一定に保たれる
+                dirPath = System.IO.Path.Combine(baseDir, folderName);
             }
+
+            // ファイル名まで含めて見せる。可変なのは時刻部分だけなので、そこはプレースホルダで示す。
+            string fileBase = ResolveCurrentFileBase(folderName);
+            string fileName = CaptureFileName.Build(fileBase, CaptureFileName.TimePlaceholder);
+            string displayPath = System.IO.Path.Combine(dirPath, fileName);
 
             if (TxtCurrentSavePath != null)
             {
@@ -471,6 +478,17 @@ namespace SCtoolGui
                 CmbWindows.SelectionChanged += CmbWindows_SelectionChanged;
             }
         }
+
+        /// <summary>
+        /// 現在の設定・対象から、スクショのファイル名ベース（時刻・拡張子を除く部分）を決める。
+        /// 撮影本体と保存先プレビューで共有し、両者を必ず一致させる。
+        /// ウィンドウ名採用時は最新の実タイトル(LastKnownTitle)を使う。空ならフォルダ名(登録名)にフォールバック。
+        /// </summary>
+        private string ResolveCurrentFileBase(string folderName)
+            => FileBaseNameResolver.Resolve(
+                _settingsManager.Current.UseWindowTitleForFileName,
+                CurrentTarget?.LastKnownTitle ?? "",
+                folderName);
 
         private string GetSafeFileName(string name) => FileNameUtil.ToSafeName(name);
     }

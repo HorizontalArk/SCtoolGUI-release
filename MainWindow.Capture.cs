@@ -82,6 +82,9 @@ namespace SCtoolGui
 
         private void ExecuteCapture()
         {
+            // アップデート適用中はホットキー・ボタンいずれの撮影も抑止する（両経路ともここに集約）。
+            if (_isUpdating) return;
+
             if (CmbWindows.SelectedItem is WindowItem selected) {
                 // プルダウン項目の Title/Handle はプルダウンを開いた時点で固定され、その後アプリ側で
                 // タイトルが変わっても追随しない。撮影の直前に実ウィンドウを取り直し、最新の
@@ -120,12 +123,11 @@ namespace SCtoolGui
                     if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
                     // ファイル名ベースは設定に応じて登録名か実ウィンドウタイトルを使う。
-                    string fileBase = FileBaseNameResolver.Resolve(
-                        _settingsManager.Current.UseWindowTitleForFileName,
-                        selected.Title,
-                        folderName);
+                    // 保存先プレビュー(UpdateCurrentSavePathDisplay)と同じ導出を共有し、表示と実結果を一致させる。
+                    string fileBase = ResolveCurrentFileBase(folderName);
 
-                    string fullPath = Path.Combine(targetDir, $"{fileBase}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg");
+                    string fileName = CaptureFileName.Build(fileBase, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+                    string fullPath = Path.Combine(targetDir, fileName);
                     int topCut = CurrentCutValue;
 
                     ScreenCapture.SaveWindowCaptureWithExif(selected.Handle, fullPath, CapturePreviewPath, topCut);

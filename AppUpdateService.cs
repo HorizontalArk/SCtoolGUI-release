@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
@@ -26,10 +27,13 @@ namespace SCtoolGui
         /// <summary>更新があれば UpdateInfo を返す。無ければ null。</summary>
         public Task<UpdateInfo?> CheckAsync() => _mgr.CheckForUpdatesAsync();
 
-        /// <summary>更新をDLして適用し、アプリを再起動する。この呼び出しからは戻らない。</summary>
-        public async Task DownloadAndApplyAsync(UpdateInfo info)
+        /// <summary>
+        /// 更新をDLして適用し、アプリを再起動する。成功時はこの呼び出しからは戻らない。
+        /// <paramref name="onProgress"/> にはDLの進捗(0〜100)が渡る。
+        /// </summary>
+        public async Task DownloadAndApplyAsync(UpdateInfo info, Action<int>? onProgress = null)
         {
-            await _mgr.DownloadUpdatesAsync(info);
+            await _mgr.DownloadUpdatesAsync(info, onProgress);
             _mgr.ApplyUpdatesAndRestart(info);
         }
     }

@@ -16,6 +16,9 @@ namespace SCtoolGui
         private readonly AppUpdateService _updateService = new AppUpdateService();
         private UpdateInfo? _pendingUpdate;
 
+        /// <summary>アップデート適用中（DL〜再起動待ち）。この間は撮影など主要操作を抑止する。</summary>
+        private bool _isUpdating;
+
         /// <summary>Prompt を既に出した対象キー（対象ごと1回まで誘導するため）。</summary>
         private readonly System.Collections.Generic.HashSet<string> _autoSwitchPromptedTargets = new();
 
@@ -582,21 +585,50 @@ namespace SCtoolGui
 
         private async void BtnUpdate_Click(object sender, RoutedEventArgs e)
         {
-            if (_pendingUpdate == null) return;
+            if (_pendingUpdate == null || _isUpdating) return;
+
+            // 押下と同時に（DL開始前に）操作をロックする。DLに時間がかかっても
+            // 「押したのに無反応」に見えないよう、オーバーレイを先に出す。
+            _isUpdating = true;
+            BtnUpdate.IsEnabled = false;
+            ShowUpdateOverlay();
+            Log("アップデートをダウンロードして適用します...");
 
             try
             {
-                Log("アップデートをダウンロードして適用します...");
-                BtnUpdate.IsEnabled = false;
-                await _updateService.DownloadAndApplyAsync(_pendingUpdate);
+                // Velopack のDLコールバックは別スレッドから来るため、Progress<T> でUIスレッドへ戻す。
+                IProgress<int> progress = new Progress<int>(UpdateOverlayProgress);
+                await _updateService.DownloadAndApplyAsync(_pendingUpdate, progress.Report);
                 // 成功時はここに戻らず再起動する。
             }
             catch (Exception ex)
             {
+                // 失敗時はロックを解除し、再挑戦できるようボタンを戻す。
+                _isUpdating = false;
+                HideUpdateOverlay();
                 BtnUpdate.IsEnabled = true;
                 MessageBox.Show($"アップデートに失敗しました:\n{ex.Message}", "エラー",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>操作ロックのオーバーレイを表示し、進捗を初期化する。</summary>
+        private void ShowUpdateOverlay()
+        {
+            UpdateProgressBar.Value = 0;
+            TxtUpdateProgress.Text = "ダウンロード中… 0%";
+            UpdateOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void HideUpdateOverlay() => UpdateOverlay.Visibility = Visibility.Collapsed;
+
+        /// <summary>DL進捗(0〜100)をオーバーレイへ反映する。Progress 経由でUIスレッドに戻る。</summary>
+        private void UpdateOverlayProgress(int percent)
+        {
+            UpdateProgressBar.Value = percent;
+            TxtUpdateProgress.Text = percent >= 100
+                ? "適用して再起動しています…"
+                : $"ダウンロード中… {percent}%";
         }
     }
 }
