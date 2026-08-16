@@ -277,6 +277,9 @@ namespace SCtoolGui
                 if (CmbWindows.SelectedItem is WindowItem selected)
                 {
                     selected.Handle = targetWindow.Handle;
+                    // プルダウンを開き直さなくても、選択中項目のウィンドウ名を最新へ追随させる。
+                    // WindowItem は INotifyPropertyChanged 非対応なので、変化時のみ Items.Refresh で再描画する。
+                    RefreshSelectedWindowTitle(selected, targetWindow.Title);
                 }
 
                 if (WindowManager.IsWindowMinimized(targetWindow.Handle)) {
@@ -443,6 +446,29 @@ namespace SCtoolGui
             {
                 string name = CurrentTarget?.DisplayName ?? "";
                 return string.IsNullOrEmpty(name) ? "{ウィンドウ名}" : GetSafeFileName(name);
+            }
+        }
+
+        /// <summary>
+        /// 選択中の一覧項目のウィンドウ名を、実ウィンドウの最新タイトルへ更新する。
+        /// 変化があった時だけ ComboBox を再描画する（毎周期の Refresh を避けるため）。
+        /// Items.Refresh は選択変更を再発火しうるので、その間だけ購読を外す。
+        /// </summary>
+        private void RefreshSelectedWindowTitle(WindowItem selected, string latestTitle)
+        {
+            if (string.IsNullOrEmpty(latestTitle) || selected.Title == latestTitle) return;
+
+            selected.Title = latestTitle;
+
+            CmbWindows.SelectionChanged -= CmbWindows_SelectionChanged;
+            try
+            {
+                CmbWindows.Items.Refresh();
+                CmbWindows.SelectedItem = selected;
+            }
+            finally
+            {
+                CmbWindows.SelectionChanged += CmbWindows_SelectionChanged;
             }
         }
 

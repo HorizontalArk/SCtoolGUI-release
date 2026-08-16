@@ -83,6 +83,15 @@ namespace SCtoolGui
         private void ExecuteCapture()
         {
             if (CmbWindows.SelectedItem is WindowItem selected) {
+                // プルダウン項目の Title/Handle はプルダウンを開いた時点で固定され、その後アプリ側で
+                // タイトルが変わっても追随しない。撮影の直前に実ウィンドウを取り直し、最新の
+                // タイトル・ハンドルへ更新してからファイル名を決める（古いタイトルが残る不具合の対策）。
+                if (FindTargetWindow() is WindowItem latest)
+                {
+                    selected.Title = latest.Title;
+                    selected.Handle = latest.Handle;
+                }
+
                 if (selected.Handle == IntPtr.Zero) {
                     Log($"【警告】{selected.Title} は起動していないためキャプチャできません。");
                     return;
