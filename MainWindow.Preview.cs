@@ -33,12 +33,12 @@ namespace SCtoolGui
 
             if (selected.Handle == IntPtr.Zero)
             {
-                if (verbose) Log("【警告】ウィンドウが選択されていないか、起動していません。");
+                if (verbose) Log(LogLevel.Warning, LogMessages.PreviewNoWindow);
                 return false;
             }
             if (WindowManager.IsWindowMinimized(selected.Handle))
             {
-                if (verbose) Log("【警告】選択中のウィンドウは最小化されているためプレビューできません。");
+                if (verbose) Log(LogLevel.Warning, LogMessages.PreviewMinimized);
                 return false;
             }
 
@@ -47,17 +47,17 @@ namespace SCtoolGui
                 if (!ScreenCapture.SavePreviewOnly(selected.Handle, TempPreviewPath))
                 {
                     // 対象を前面にできなかった場合もここに来る（別画面の写り込みを防ぐため中止している）
-                    if (verbose) Log("【エラー】プレビューを取得できませんでした。対象を前面に表示できていない可能性があります。");
+                    if (verbose) Log(LogLevel.Error, LogMessages.PreviewCaptureFailed);
                     return false;
                 }
 
                 ShowPreview(TempPreviewPath, isTempPreview: true);
-                if (verbose) Log("一時プレビューを更新しました。");
+                if (verbose) Log(LogMessages.PreviewUpdated);
                 return true;
             }
             catch (Exception ex)
             {
-                if (verbose) Log($"【エラー】プレビュー更新中にエラーが発生しました: {ex.Message}");
+                if (verbose) Log(LogLevel.Error, LogMessages.PreviewUpdateError(ex.Message));
                 return false;
             }
             finally
@@ -221,15 +221,15 @@ namespace SCtoolGui
                 if (path == null)
                 {
                     Log(target == CopyTarget.TempPreview
-                        ? "一時プレビューがまだありません。"
-                        : "保存された画像がまだありません。");
+                        ? LogMessages.ClipboardNoTempPreview
+                        : LogMessages.ClipboardNoSavedImage);
                     return;
                 }
 
                 Clipboard.SetImage(LoadBitmap(path));
-                Log(isAuto ? "画像をクリップボードに自動コピーしました。" : "画像をクリップボードにコピーしました。");
+                Log(isAuto ? LogMessages.ClipboardCopiedAuto : LogMessages.ClipboardCopied);
             }
-            catch (Exception ex) { Log($"【エラー】 コピー失敗: {ex.Message}"); }
+            catch (Exception ex) { Log(LogLevel.Error, LogMessages.ClipboardCopyFailed(ex.Message)); }
         }
 
         // スプリットボタン右「▽」：付属の ContextMenu をボタン位置に開く。
@@ -257,7 +257,7 @@ namespace SCtoolGui
                 try {
                     string fileName = Path.GetFileName(_lastCapturedPath);
                     File.Delete(_lastCapturedPath);
-                    Log($"【削除】 画像ファイルを削除しました: {fileName}");
+                    Log(LogLevel.Success, LogMessages.FileDeleted(fileName));
 
                     ImgPreview.Source = null;
                     UpdateCutOverlay(forceHide: true);
@@ -272,11 +272,8 @@ namespace SCtoolGui
                     UpdateToolTips(); // 削除後にツールチップも更新
                 }
                 catch (Exception ex) {
-                    Log($"【エラー】 ファイルの削除に失敗しました: {ex.Message}");
+                    Log(LogLevel.Error, LogMessages.FileDeleteFailed(ex.Message));
                 }
-            }
-            else {
-                Log("画像の削除をキャンセルしました。");
             }
         }
     }

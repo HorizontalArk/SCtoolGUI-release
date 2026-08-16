@@ -71,7 +71,6 @@ namespace SCtoolGui
         private void CmbWindows_DropDownOpened(object sender, EventArgs e)
         {
             RefreshWindowList();
-            Log("ウィンドウ一覧を更新しました。");
         }
 
         /// <summary>
@@ -107,7 +106,7 @@ namespace SCtoolGui
 
                 // 昇格をキャンセルされた → ガードを取り直し、通常権限のまま選択を続行する
                 SingleInstance.TryAcquire();
-                Log("管理者としての再起動をキャンセルしました。通常権限のまま続行します。");
+                Log(LogMessages.ElevationRestartCanceled);
                 return true;
             }
 
@@ -148,7 +147,7 @@ namespace SCtoolGui
                 _settingsManager.Current.LastSelectedWindow = selected.Title; // 旧バージョン互換
                 _trackedHandle = selected.Handle;
 
-                SaveAndLog($"ウィンドウを [{target.DisplayName}] に切り替えました。");
+                SaveAndLog(LogMessages.WindowSwitched(LogFormatter.Target(TargetLogName)));
 
                 ChkAlwaysOnTop.IsChecked = false;
 
@@ -160,7 +159,7 @@ namespace SCtoolGui
                 {
                     ChkCutTab.IsChecked = true;
                     TxtTopCut.Text = target.TopCut.ToString();
-                    Log($"[{target.DisplayName}] のカット設定({target.TopCut}px)を自動復元しました。");
+                    Log(LogMessages.CutSettingRestored(LogFormatter.Target(TargetLogName), target.TopCut));
                 }
                 else
                 {
@@ -305,7 +304,7 @@ namespace SCtoolGui
                 if (ChkAlwaysOnTop.IsChecked == true)
                 {
                     ChkAlwaysOnTop.IsChecked = false;
-                    Log($"{name}の最前面固定を解除しました");
+                    Log(LogMessages.TopmostReleased(LogFormatter.Target(TargetLogName)));
                 }
             }
 
@@ -314,7 +313,7 @@ namespace SCtoolGui
 
         private void ChkAlwaysOnTop_Click(object sender, RoutedEventArgs e)
         {
-            string targetTitle = CurrentTarget?.DisplayName ?? "";
+            string targetName = LogFormatter.Target(TargetLogName);
 
             if (ChkAlwaysOnTop.IsChecked == true)
             {
@@ -322,14 +321,14 @@ namespace SCtoolGui
 
                 if (targetWindow == null)
                 {
-                    Log($"{targetTitle}は非起動中であるため、操作がキャンセルされました");
+                    Log(LogLevel.Warning, LogMessages.TopmostCanceledNotRunning(targetName));
                     ChkAlwaysOnTop.IsChecked = false;
                     return;
                 }
 
                 if (WindowManager.IsWindowMinimized(targetWindow.Handle))
                 {
-                    Log($"{targetTitle}は最小化中であるため、操作がキャンセルされました");
+                    Log(LogLevel.Warning, LogMessages.TopmostCanceledMinimized(targetName));
                     ChkAlwaysOnTop.IsChecked = false;
                     return;
                 }
@@ -343,12 +342,12 @@ namespace SCtoolGui
 
                 if (success)
                 {
-                    Log($"{targetTitle}を最前面に固定しました");
+                    Log(LogMessages.TopmostSet(targetName));
                 }
                 else
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    Log($"【拒否】{targetTitle}の最前面化をOSにブロックされました(Error:{errorCode})。対象アプリの権限が強いか、仕様により操作できません。SCtoolを管理者として実行すると解決する場合があります。");
+                    Log(LogLevel.Warning, LogMessages.TopmostBlocked(targetName, errorCode));
                     ChkAlwaysOnTop.IsChecked = false;
                 }
             }
@@ -360,7 +359,7 @@ namespace SCtoolGui
                 {
                     WindowManager.SetAlwaysOnTop(handleToUnset, false);
                 }
-                Log($"{targetTitle}の最前面固定を解除しました");
+                Log(LogMessages.TopmostReleased(targetName));
             }
         }
 
@@ -393,7 +392,7 @@ namespace SCtoolGui
             var target = CurrentTarget;
             if (target == null)
             {
-                Log("【警告】対象アプリが選択されていません。");
+                Log(LogLevel.Warning, LogMessages.NoTargetSelected);
                 return;
             }
 
@@ -423,21 +422,21 @@ namespace SCtoolGui
                     try
                     {
                         System.IO.Directory.Move(plan.OldPath!, plan.NewPath!);
-                        Log($"画像フォルダを [{oldName}] から [{newName}] へ移動しました。");
+                        Log(LogMessages.FolderMoved(LogFormatter.Target(oldName), LogFormatter.Target(newName)));
                     }
                     catch (Exception ex)
                     {
-                        Log($"【警告】画像フォルダの移動に失敗しました: {ex.Message}");
+                        Log(LogLevel.Warning, LogMessages.FolderMoveFailed(ex.Message));
                     }
                 }
             }
             else if (plan.Action == FolderRenameAction.ConflictSkip)
             {
-                Log($"【注意】新しい名前「{newName}」のフォルダが既にあるため、旧フォルダの移動は行いませんでした。");
+                Log(LogLevel.Warning, LogMessages.FolderMoveSkippedConflict(LogFormatter.Target(newName)));
             }
 
             target.DisplayName = newName;
-            SaveAndLog($"呼び名を [{oldName}] から [{target.DisplayName}] に変更しました。");
+            SaveAndLog(LogMessages.TargetRenamed(LogFormatter.Target(oldName), LogFormatter.Target(target.DisplayName)));
 
             UpdateCurrentSavePathDisplay();
             UpdateWindowStatus();
@@ -489,6 +488,20 @@ namespace SCtoolGui
                 _settingsManager.Current.UseWindowTitleForFileName,
                 CurrentTarget?.LastKnownTitle ?? "",
                 folderName);
+
+        /// <summary>
+        /// ログ表示に使う対象ウィンドウ名。状態表示（「〜は起動中です」）と同じく実タイトル
+        /// (LastKnownTitle) を基準にし、アプリ全体で表記を揃える。未取得なら呼び名にフォールバック。
+        /// </summary>
+        private string TargetLogName
+        {
+            get
+            {
+                var t = CurrentTarget;
+                if (t == null) return "";
+                return !string.IsNullOrEmpty(t.LastKnownTitle) ? t.LastKnownTitle : t.DisplayName;
+            }
+        }
 
         private string GetSafeFileName(string name) => FileNameUtil.ToSafeName(name);
     }

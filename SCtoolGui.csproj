@@ -17,6 +17,14 @@
     <Resource Include="app.ico" />
   </ItemGroup>
 
+  <!-- ログ文言リソース。SDKが暗黙でEmbeddedResourceに含めるため Update で論理名だけ固定し、
+       手書きアクセサ(LogMessages.cs)の ResourceManager から引く。 -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\LogMessages.resx">
+      <LogicalName>SCtoolGui.Resources.LogMessages.resources</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <!-- App.xaml を ApplicationDefinition から Page に変更する。
        WPF に Main を自動生成させず、Program.Main を唯一のエントリポイントにするため。
        InitializeComponent は Page 扱いでも生成されるので App のリソース読込は従来どおり。 -->

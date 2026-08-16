@@ -78,7 +78,7 @@ namespace SCtoolGui
         private void ChkCutTab_Click(object sender, RoutedEventArgs e)
         {
             bool isOn = ChkCutTab.IsChecked == true;
-            Log($"上部カットを {(isOn ? "ON" : "OFF")} に変更しました。");
+            Log(LogMessages.TopCutChanged(isOn ? "ON" : "OFF"));
 
             if (ImgPreview.Source != null) UpdateCutOverlay();
 

@@ -37,10 +37,10 @@ namespace SCtoolGui
 
                 if (!_hotKeyManager.IsRegistered)
                 {
-                    Log("【警告】ホットキーを登録できませんでした。他のアプリに使われている可能性があります。詳細設定で別のキーに変更してください。");
+                    Log(LogLevel.Warning, LogMessages.HotkeyRegisterFailedInUse);
                 }
             }
-            catch { Log("【警告】ホットキーの登録に失敗しました。"); }
+            catch { Log(LogLevel.Warning, LogMessages.HotkeyRegisterFailed); }
         }
 
         private void UpdateButtonText()
@@ -96,12 +96,12 @@ namespace SCtoolGui
                 }
 
                 if (selected.Handle == IntPtr.Zero) {
-                    Log($"【警告】{selected.Title} は起動していないためキャプチャできません。");
+                    Log(LogLevel.Warning, LogMessages.CaptureTargetNotRunning(LogFormatter.Target(TargetLogName)));
                     return;
                 }
 
                 if (WindowManager.IsWindowMinimized(selected.Handle)) {
-                    Log($"【警告】{selected.Title} は最小化されているためキャプチャできません。");
+                    Log(LogLevel.Warning, LogMessages.CaptureTargetMinimized(LogFormatter.Target(TargetLogName)));
                     return;
                 }
 
@@ -134,7 +134,8 @@ namespace SCtoolGui
                     _lastCapturedPath = fullPath;
 
                     if (CurrentTarget is TargetInfo target) target.TopCut = topCut;
-                    SaveAndLog($"【成功】 {fileBase} -> {fullPath}");
+                    // 対象名を統一表記で示し、保存先はフルパスで見せる（fileBase は fullPath に含まれるため単独表示しない）。
+                    SaveAndLog(LogLevel.Success, LogMessages.CaptureSucceeded(LogFormatter.Target(TargetLogName), fullPath));
 
                     if (_settingsManager.Current.PlayShutterSound)
                     {
@@ -150,7 +151,7 @@ namespace SCtoolGui
                         CopyToClipboard(CopyTarget.LastSaved, isAuto: true);
                     }
 
-                } catch (Exception ex) { Log($"【エラー】 {ex.Message}"); }
+                } catch (Exception ex) { Log(LogLevel.Error, LogMessages.CaptureFailed(ex.Message)); }
                 finally
                 {
                     // 撮影のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す

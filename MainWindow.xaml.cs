@@ -43,7 +43,6 @@ namespace SCtoolGui
             InitializeWindowList();
             InitializeCaptureAndHotKey();
 
-            Log("アプリが起動しました。");
             CheckUpdates();
 
             // 表示完了後に、初回セットアップウィザードと起動時前面復帰を順に行う。
@@ -198,18 +197,33 @@ namespace SCtoolGui
             catch { }
         }
 
+        /// <summary>情報ログ（プレフィックスなし）を出す。</summary>
         private void Log(string msg)
-        { 
-            TxtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\r\n"); 
-            TxtLog.ScrollToEnd(); 
+        {
+            TxtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\r\n");
+            TxtLog.ScrollToEnd();
         }
 
+        /// <summary>重大度付きでログを出す。プレフィックスは LogFormatter に一元化。</summary>
+        private void Log(LogLevel level, string msg) => Log(LogFormatter.Format(level, msg));
+
+        /// <summary>設定を保存し、成功時に情報ログを出す（メッセージ省略時は無出力）。</summary>
         private void SaveAndLog(string? logMessage = null)
         {
             if (_settingsManager.Save()) {
                 if (logMessage != null) Log(logMessage);
             } else {
-                Log("【エラー】設定の保存に失敗しました。");
+                Log(LogLevel.Error, "設定の保存に失敗しました。");
+            }
+        }
+
+        /// <summary>設定を保存し、成功時に重大度付きログを出す。</summary>
+        private void SaveAndLog(LogLevel level, string logMessage)
+        {
+            if (_settingsManager.Save()) {
+                Log(level, logMessage);
+            } else {
+                Log(LogLevel.Error, "設定の保存に失敗しました。");
             }
         }
 
@@ -240,7 +254,7 @@ namespace SCtoolGui
                 if (!string.IsNullOrEmpty(_settingsManager.Current.IconPath))
                 {
                     if (!ShortcutIconUpdater.ApplyUserIcon(_settingsManager.Current.IconPath, out string iconErr))
-                        Log($"【警告】アイコンをタスクバー用に変換できませんでした（{iconErr}）。ウィンドウのアイコンのみ変更されます。");
+                        Log(LogLevel.Warning, LogMessages.IconTaskbarConvertFailed(iconErr));
                 }
                 else
                 {
@@ -495,7 +509,7 @@ namespace SCtoolGui
 
                 this.Topmost = _settingsManager.Current.AppTopmost;
 
-                SaveAndLog("詳細設定を更新しました。");
+                SaveAndLog(LogMessages.SettingsUpdated);
                 RegisterHotKey();
                 UpdateButtonText();
 
@@ -524,9 +538,6 @@ namespace SCtoolGui
                     }
                 }
             }
-            else {
-                Log("詳細設定の変更をキャンセルしました。");
-            }
         }
 
         private void BtnOpenFolder_Click(object sender, RoutedEventArgs e) 
@@ -549,7 +560,7 @@ namespace SCtoolGui
             }
             else
             {
-                Log("【警告】開く対象のフォルダが存在しません。");
+                Log(LogLevel.Warning, LogMessages.FolderToOpenMissing);
             }
         }
 
@@ -558,28 +569,28 @@ namespace SCtoolGui
             // Velopack でインストールされていない（dev実行など）場合は更新確認しない。
             if (!_updateService.IsInstalled)
             {
-                Log("更新確認: インストール版ではないためスキップしました。");
+                Log(LogMessages.UpdateSkippedNotInstalled);
                 return;
             }
 
-            Log("アップデートを確認中...");
+            Log(LogMessages.UpdateChecking);
             try
             {
                 _pendingUpdate = await _updateService.CheckAsync();
                 if (_pendingUpdate != null)
                 {
                     UpdateBanner.Visibility = Visibility.Visible;
-                    Log("【通知】新しいアップデートがあります。ボタンから更新できます。");
+                    Log(LogMessages.UpdateAvailable);
                 }
                 else
                 {
-                    Log("アプリケーションは最新です。");
+                    Log(LogMessages.UpdateUpToDate);
                 }
             }
             catch
             {
                 // ネットワーク不通などは黙って諦める（起動を妨げない）。
-                Log("更新の確認に失敗しました（ネットワーク等）。");
+                Log(LogMessages.UpdateCheckFailed);
             }
         }
 
@@ -592,7 +603,7 @@ namespace SCtoolGui
             _isUpdating = true;
             BtnUpdate.IsEnabled = false;
             ShowUpdateOverlay();
-            Log("アップデートをダウンロードして適用します...");
+            Log(LogMessages.UpdateDownloading);
 
             try
             {

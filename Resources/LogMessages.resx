@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    ログ表示の文言を一元管理するリソース。
+    プレフィックス([成功]/[警告]/[エラー])は LogFormatter が付けるため、ここには含めない。
+    パラメータは {0},{1}... の複合書式。対象名は LogFormatter.Target で整形した値を渡す。
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- 撮影 -->
+  <data name="CaptureSucceeded" xml:space="preserve">
+    <value>{0} を保存しました: {1}</value>
+    <comment>{0}=対象名(整形済), {1}=保存先フルパス</comment>
+  </data>
+  <data name="CaptureTargetNotRunning" xml:space="preserve">
+    <value>{0} は起動していないためキャプチャできません。</value>
+  </data>
+  <data name="CaptureTargetMinimized" xml:space="preserve">
+    <value>{0} は最小化されているためキャプチャできません。</value>
+  </data>
+  <data name="CaptureFailed" xml:space="preserve">
+    <value>{0}</value>
+    <comment>{0}=例外メッセージ</comment>
+  </data>
+
+  <!-- ホットキー -->
+  <data name="HotkeyRegisterFailedInUse" xml:space="preserve">
+    <value>ホットキーを登録できませんでした。他のアプリに使われている可能性があります。詳細設定で別のキーに変更してください。</value>
+  </data>
+  <data name="HotkeyRegisterFailed" xml:space="preserve">
+    <value>ホットキーの登録に失敗しました。</value>
+  </data>
+
+  <!-- 上部カット -->
+  <data name="TopCutChanged" xml:space="preserve">
+    <value>上部カットを {0} に変更しました。</value>
+    <comment>{0}=ON/OFF</comment>
+  </data>
+
+  <!-- プレビュー -->
+  <data name="PreviewNoWindow" xml:space="preserve">
+    <value>ウィンドウが選択されていないか、起動していません。</value>
+  </data>
+  <data name="PreviewMinimized" xml:space="preserve">
+    <value>選択中のウィンドウは最小化されているためプレビューできません。</value>
+  </data>
+  <data name="PreviewCaptureFailed" xml:space="preserve">
+    <value>プレビューを取得できませんでした。対象を前面に表示できていない可能性があります。</value>
+  </data>
+  <data name="PreviewUpdated" xml:space="preserve">
+    <value>一時プレビューを更新しました。</value>
+  </data>
+  <data name="PreviewUpdateError" xml:space="preserve">
+    <value>プレビュー更新中にエラーが発生しました: {0}</value>
+    <comment>{0}=例外メッセージ</comment>
+  </data>
+
+  <!-- クリップボード / 削除 -->
+  <data name="ClipboardNoTempPreview" xml:space="preserve">
+    <value>一時プレビューがまだありません。</value>
+  </data>
+  <data name="ClipboardNoSavedImage" xml:space="preserve">
+    <value>保存された画像がまだありません。</value>
+  </data>
+  <data name="ClipboardCopiedAuto" xml:space="preserve">
+    <value>画像をクリップボードに自動コピーしました。</value>
+  </data>
+  <data name="ClipboardCopied" xml:space="preserve">
+    <value>画像をクリップボードにコピーしました。</value>
+  </data>
+  <data name="ClipboardCopyFailed" xml:space="preserve">
+    <value>コピーに失敗しました: {0}</value>
+    <comment>{0}=例外メッセージ</comment>
+  </data>
+  <data name="FileDeleted" xml:space="preserve">
+    <value>画像ファイルを削除しました: {0}</value>
+    <comment>{0}=ファイル名</comment>
+  </data>
+  <data name="FileDeleteFailed" xml:space="preserve">
+    <value>ファイルの削除に失敗しました: {0}</value>
+    <comment>{0}=例外メッセージ</comment>
+  </data>
+
+  <!-- ウィンドウ / 対象 -->
+  <data name="ElevationRestartCanceled" xml:space="preserve">
+    <value>管理者としての再起動をキャンセルしました。通常権限のまま続行します。</value>
+  </data>
+  <data name="WindowSwitched" xml:space="preserve">
+    <value>ウィンドウを {0} に切り替えました。</value>
+    <comment>{0}=対象名(整形済)</comment>
+  </data>
+  <data name="CutSettingRestored" xml:space="preserve">
+    <value>{0} のカット設定({1}px)を自動復元しました。</value>
+    <comment>{0}=対象名(整形済), {1}=カット値</comment>
+  </data>
+  <data name="TopmostSet" xml:space="preserve">
+    <value>{0} を最前面に固定しました。</value>
+  </data>
+  <data name="TopmostReleased" xml:space="preserve">
+    <value>{0} の最前面固定を解除しました。</value>
+  </data>
+  <data name="TopmostCanceledNotRunning" xml:space="preserve">
+    <value>{0} は起動していないため、操作をキャンセルしました。</value>
+  </data>
+  <data name="TopmostCanceledMinimized" xml:space="preserve">
+    <value>{0} は最小化されているため、操作をキャンセルしました。</value>
+  </data>
+  <data name="TopmostBlocked" xml:space="preserve">
+    <value>{0} の最前面化をOSにブロックされました(Error:{1})。対象アプリの権限が強いか、仕様により操作できません。SCtoolを管理者として実行すると解決する場合があります。</value>
+    <comment>{0}=対象名(整形済), {1}=エラーコード</comment>
+  </data>
+  <data name="NoTargetSelected" xml:space="preserve">
+    <value>対象アプリが選択されていません。</value>
+  </data>
+
+  <!-- 画像フォルダ / 呼び名 -->
+  <data name="FolderMoved" xml:space="preserve">
+    <value>画像フォルダを {0} から {1} へ移動しました。</value>
+    <comment>{0}=旧名(整形済), {1}=新名(整形済)</comment>
+  </data>
+  <data name="FolderMoveFailed" xml:space="preserve">
+    <value>画像フォルダの移動に失敗しました: {0}</value>
+    <comment>{0}=例外メッセージ</comment>
+  </data>
+  <data name="FolderMoveSkippedConflict" xml:space="preserve">
+    <value>新しい名前 {0} のフォルダが既にあるため、旧フォルダの移動は行いませんでした。</value>
+    <comment>{0}=新名(整形済)</comment>
+  </data>
+  <data name="TargetRenamed" xml:space="preserve">
+    <value>呼び名を {0} から {1} に変更しました。</value>
+    <comment>{0}=旧名(整形済), {1}=新名(整形済)</comment>
+  </data>
+
+  <!-- 設定 / アイコン -->
+  <data name="SettingsSaveFailed" xml:space="preserve">
+    <value>設定の保存に失敗しました。</value>
+  </data>
+  <data name="SettingsUpdated" xml:space="preserve">
+    <value>詳細設定を更新しました。</value>
+  </data>
+  <data name="IconTaskbarConvertFailed" xml:space="preserve">
+    <value>アイコンをタスクバー用に変換できませんでした（{0}）。ウィンドウのアイコンのみ変更されます。</value>
+    <comment>{0}=詳細</comment>
+  </data>
+  <data name="FolderToOpenMissing" xml:space="preserve">
+    <value>開く対象のフォルダが存在しません。</value>
+  </data>
+
+  <!-- アップデート -->
+  <data name="UpdateSkippedNotInstalled" xml:space="preserve">
+    <value>更新確認: インストール版ではないためスキップしました。</value>
+  </data>
+  <data name="UpdateChecking" xml:space="preserve">
+    <value>アップデートを確認中...</value>
+  </data>
+  <data name="UpdateAvailable" xml:space="preserve">
+    <value>新しいアップデートがあります。ボタンから更新できます。</value>
+  </data>
+  <data name="UpdateUpToDate" xml:space="preserve">
+    <value>アプリケーションは最新です。</value>
+  </data>
+  <data name="UpdateCheckFailed" xml:space="preserve">
+    <value>更新の確認に失敗しました（ネットワーク等）。</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>アップデートをダウンロードして適用します...</value>
+  </data>
+</root>
