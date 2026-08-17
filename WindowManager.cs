@@ -7,24 +7,6 @@ using System.Windows.Media;
 
 namespace SCtoolGui
 {
-    public class WindowItem : IWindowSnapshot
-    {
-        /// <summary>ウィンドウタイトル。アプリの状態で変化しうるため、識別子には使わない。</summary>
-        public string Title { get; set; } = string.Empty;
-
-        public IntPtr Handle { get; set; }
-
-        /// <summary>実行ファイルのフルパス。取得できなかった場合は空。ターゲットの永続的な識別子。</summary>
-        public string ExecutablePath { get; set; } = string.Empty;
-
-        /// <summary>実行ファイル名（拡張子なし）。表示名の初期値に使う。</summary>
-        public string ProcessName =>
-            string.IsNullOrEmpty(ExecutablePath) ? string.Empty : Path.GetFileNameWithoutExtension(ExecutablePath);
-
-        /// <summary>プロセス（exe）のアイコン。一覧表示に使う。取得できなければ null。</summary>
-        public ImageSource? Icon { get; set; }
-    }
-
     public static class WindowManager
     {
         // ★修正: SetLastError = true を追加し、OSからエラーコードを受け取れるようにする

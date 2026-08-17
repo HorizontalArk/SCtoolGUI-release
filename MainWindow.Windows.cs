@@ -276,8 +276,8 @@ namespace SCtoolGui
                 if (CmbWindows.SelectedItem is WindowItem selected)
                 {
                     selected.Handle = targetWindow.Handle;
-                    // プルダウンを開き直さなくても、選択中項目のウィンドウ名を最新へ追随させる。
-                    // WindowItem は INotifyPropertyChanged 非対応なので、変化時のみ Items.Refresh で再描画する。
+                    // プルダウンを開き直さなくても、選択中項目のウィンドウ名を最新へ追随させる
+                    // （WindowItem.Title の変更通知でバインディングが自動更新される）。
                     RefreshSelectedWindowTitle(selected, targetWindow.Title);
                 }
 
@@ -464,18 +464,9 @@ namespace SCtoolGui
         {
             if (string.IsNullOrEmpty(latestTitle) || selected.Title == latestTitle) return;
 
+            // WindowItem.Title は INotifyPropertyChanged 対応なので、代入するだけで
+            // ドロップダウン内・選択ボックス（閉じた状態の表示）の両方が追随する。
             selected.Title = latestTitle;
-
-            CmbWindows.SelectionChanged -= CmbWindows_SelectionChanged;
-            try
-            {
-                CmbWindows.Items.Refresh();
-                CmbWindows.SelectedItem = selected;
-            }
-            finally
-            {
-                CmbWindows.SelectionChanged += CmbWindows_SelectionChanged;
-            }
         }
 
         /// <summary>

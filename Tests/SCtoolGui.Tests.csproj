@@ -25,6 +25,7 @@
   -->
   <ItemGroup>
     <Compile Include="..\WindowMatcher.cs" Link="Source\WindowMatcher.cs" />
+    <Compile Include="..\WindowItem.cs" Link="Source\WindowItem.cs" />
     <Compile Include="..\TargetInfo.cs" Link="Source\TargetInfo.cs" />
     <Compile Include="..\SettingsManager.cs" Link="Source\SettingsManager.cs" />
     <Compile Include="..\ProcessElevation.cs" Link="Source\ProcessElevation.cs" />
