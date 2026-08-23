@@ -56,5 +56,23 @@ namespace SCtoolGui.Tests
         {
             Assert.Equal(CopyTarget.LastSaved, CopyTargetResolver.Parse("なにか"));
         }
+
+        [Fact]
+        public void Parse_FreshPreview_ReturnsFreshPreview()
+        {
+            Assert.Equal(CopyTarget.FreshPreview, CopyTargetResolver.Parse("FreshPreview"));
+        }
+
+        [Fact]
+        public void Parse_TempPreview_StillReturnsTempPreview()
+        {
+            Assert.Equal(CopyTarget.TempPreview, CopyTargetResolver.Parse("TempPreview"));
+        }
+
+        [Fact]
+        public void Parse_Unknown_ReturnsLastSaved()
+        {
+            Assert.Equal(CopyTarget.LastSaved, CopyTargetResolver.Parse("xxxx"));
+        }
     }
 }
