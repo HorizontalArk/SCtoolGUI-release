@@ -32,6 +32,15 @@ namespace SCtoolGui
             ThemeManager.Apply(_settingsManager.Current.Theme);
             ApplyWindowIcon();
 
+            // 更新再起動で Velopack が .lnk を作り直すと、ユーザー設定アイコンが既定(app.ico)へ
+            // 戻ってしまう。従来は詳細設定を保存し直すまで復活しなかったため、起動時に
+            // （インストール版かつアイコン設定済みなら）.lnk のアイコンを毎回再適用して自動復活させる。
+            // 反映は SHChangeNotify 後、次回起動/サインインで確実化する（Windows の仕様）。
+            if (_updateService.IsInstalled && !string.IsNullOrEmpty(_settingsManager.Current.IconPath))
+            {
+                ApplyIconToShortcuts();
+            }
+
             if (_settingsManager.Current.WindowLeft.HasValue && _settingsManager.Current.WindowTop.HasValue)
             {
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
