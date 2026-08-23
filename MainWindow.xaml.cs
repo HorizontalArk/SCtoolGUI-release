@@ -655,10 +655,6 @@ namespace SCtoolGui
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (answer != MessageBoxResult.Yes) return;
 
-            // 更新再起動は WPF の終了フローを経由しないため、ここで終了処理を先に済ませ、
-            // ウィンドウ位置・サイズ・設定を保存しておく（保存漏れ防止）。
-            PerformShutdownCleanup();
-
             // 押下と同時に（DL開始前に）操作をロックする。DLに時間がかかっても
             // 「押したのに無反応」に見えないよう、オーバーレイを先に出す。
             _isUpdating = true;
@@ -668,9 +664,13 @@ namespace SCtoolGui
 
             try
             {
-                // Velopack のDLコールバックは別スレッドから来るため、Progress<T> でUIスレッドへ戻す。
+                // 更新再起動は WPF の終了フローを経由しないため、UpdateFlow で
+                // 終了処理(PerformShutdownCleanup=位置・設定の保存)を必ず DL より先に実行する
+                // （保存漏れ防止。順序は UpdateFlow が保証し、UpdateFlowTests で検証している）。
                 IProgress<int> progress = new Progress<int>(UpdateOverlayProgress);
-                await _updateService.DownloadAndApplyAsync(_pendingUpdate, progress.Report);
+                await UpdateFlow.RunAsync(
+                    cleanup: PerformShutdownCleanup,
+                    downloadAndApply: () => _updateService.DownloadAndApplyAsync(_pendingUpdate, progress.Report));
                 // 成功時はここに戻らず再起動する。
             }
             catch (Exception ex)
