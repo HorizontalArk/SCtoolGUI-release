@@ -52,6 +52,11 @@ namespace SCtoolGui
             InitializeWindowList();
             InitializeCaptureAndHotKey();
 
+            // 起動直後（プレビュー未表示）でも、既定対象がプレビュー系ならコピー本体を有効にするなど、
+            // ボタンの有効/無効と ToolTip を実際の可否に合わせておく。
+            UpdateActionButtonsState();
+            UpdateToolTips();
+
             CheckUpdates();
 
             // 表示完了後に、初回セットアップウィザードと起動時前面復帰を順に行う。
@@ -562,6 +567,12 @@ namespace SCtoolGui
                 SaveAndLog(LogMessages.SettingsUpdated);
                 RegisterHotKey();
                 UpdateButtonText();
+
+                // コピーの既定対象が変わると、保存画像が無い状態でもコピー本体ボタンの
+                // 有効/無効が変わる（LastSaved→無効、プレビュー系→有効）ため再評価する。
+                // ToolTip も既定対象に応じて変わるので合わせて更新する。
+                UpdateActionButtonsState();
+                UpdateToolTips();
 
                 UpdateCurrentSavePathDisplay();
 

@@ -42,6 +42,7 @@
     <Compile Include="..\WindowPlacementLogic.cs" Link="Source\WindowPlacementLogic.cs" />
     <Compile Include="..\FocusRestoreLogic.cs" Link="Source\FocusRestoreLogic.cs" />
     <Compile Include="..\UpdateFlow.cs" Link="Source\UpdateFlow.cs" />
+    <Compile Include="..\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
   </ItemGroup>
 
 </Project>

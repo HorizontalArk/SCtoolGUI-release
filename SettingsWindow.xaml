@@ -44,6 +44,35 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- タブ見出し。WPF Fluent の既定 TabItem はダーク時に選択タブが白背景で浮いて見づらいため、
+             テーマ追従のブラシで作り直す。選択タブは下線(アクセント)＋濃い前景、非選択は二次前景。
+             背景は透明にしてウィンドウ背景（テーマ追従）に馴染ませる。 -->
+        <Style x:Key="ThemedTab" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="tabBorder" Background="Transparent" Padding="14,8" Margin="0,0,4,0"
+                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tabBorder" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <!-- 太字はヘッダー(tabBorder)のみに限定する。TabItem 全体に掛けると
+                                     選択中タブの中身(Content)まで太くなってしまうため。 -->
+                                <Setter TargetName="tabBorder" Property="TextElement.FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <!-- 設定項目が増えたため3タブ（基本／撮影／外観）に整理する。
          保存・キャンセルはタブ外の下部に固定し、どのタブからでも押せるようにする。
@@ -55,9 +84,10 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
+        <TabControl Grid.Row="0" Background="Transparent"
+                    BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,1,0,0">
             <!-- ===== 基本タブ ===== -->
-            <TabItem Header="基本">
+            <TabItem Header="基本" Style="{StaticResource ThemedTab}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
                     <StackPanel>
                         <TextBlock Text="保存先フォルダ:" Margin="0,0,0,5"/>
@@ -94,7 +124,7 @@
             </TabItem>
 
             <!-- ===== 撮影タブ ===== -->
-            <TabItem Header="撮影">
+            <TabItem Header="撮影" Style="{StaticResource ThemedTab}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
                     <StackPanel>
                         <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う" Margin="0,0,0,10"
@@ -147,7 +177,7 @@
             </TabItem>
 
             <!-- ===== 外観タブ ===== -->
-            <TabItem Header="外観">
+            <TabItem Header="外観" Style="{StaticResource ThemedTab}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
