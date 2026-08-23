@@ -19,6 +19,9 @@ namespace SCtoolGui
         /// <summary>アップデート適用中（DL〜再起動待ち）。この間は撮影など主要操作を抑止する。</summary>
         private bool _isUpdating;
 
+        /// <summary>終了処理のうち一回限りの破棄を二重実行しないためのガード。</summary>
+        private bool _cleanupDone;
+
         /// <summary>Prompt を既に出した対象キー（対象ごと1回まで誘導するため）。</summary>
         private readonly System.Collections.Generic.HashSet<string> _autoSwitchPromptedTargets = new();
 
@@ -117,8 +120,15 @@ namespace SCtoolGui
             catch { return false; }
         }
 
-        protected override void OnClosed(EventArgs e)
+        /// <summary>
+        /// 終了時のクリーンアップ。ウィンドウ状態・設定の保存（冪等）と、
+        /// 対象ウィンドウの最前面固定解除、HotKey 破棄（一回限り）を行う。
+        /// 通常終了（OnClosed）と更新再起動の直前の両方から呼ぶ。
+        /// Velopack の再起動は WPF の終了フローを経由しないため、更新前に明示的に呼ぶ必要がある。
+        /// </summary>
+        private void PerformShutdownCleanup()
         {
+            // 位置・サイズ保存は冪等なので毎回行う。
             if (this.WindowState == WindowState.Normal)
             {
                 _settingsManager.Current.WindowLeft = this.Left;
@@ -137,10 +147,20 @@ namespace SCtoolGui
                 }
             }
             catch { }
-            
-            _settingsManager.Save();
-            _hotKeyManager?.Dispose();
 
+            _settingsManager.Save();
+
+            // HotKey 破棄は一回限り。二重実行を避ける。
+            if (!_cleanupDone)
+            {
+                _hotKeyManager?.Dispose();
+                _cleanupDone = true;
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            PerformShutdownCleanup();
             base.OnClosed(e);
         }
 
@@ -604,6 +624,10 @@ namespace SCtoolGui
                 LogMessages.UpdateConfirmTitle,
                 MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (answer != MessageBoxResult.Yes) return;
+
+            // 更新再起動は WPF の終了フローを経由しないため、ここで終了処理を先に済ませ、
+            // ウィンドウ位置・サイズ・設定を保存しておく（保存漏れ防止）。
+            PerformShutdownCleanup();
 
             // 押下と同時に（DL開始前に）操作をロックする。DLに時間がかかっても
             // 「押したのに無反応」に見えないよう、オーバーレイを先に出す。
