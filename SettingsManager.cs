@@ -26,7 +26,10 @@ namespace SCtoolGui
         public string LastSelectedWindow { get; set; } = "";
         public double? WindowLeft { get; set; } = null;
         public double? WindowTop { get; set; } = null;
-        
+
+        /// <summary>最後に最大化状態で終了したか。true なら次回起動時に最大化して復元する。</summary>
+        public bool WindowMaximized { get; set; } = false;
+
         public bool AppTopmost { get; set; } = false;
         public bool SaveInWindowNameFolder { get; set; } = false;
         public bool ResetSettingsOnWindowChange { get; set; } = true;

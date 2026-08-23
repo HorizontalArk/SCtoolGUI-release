@@ -39,6 +39,12 @@ namespace SCtoolGui
                 this.Top = _settingsManager.Current.WindowTop.Value;
             }
 
+            // 最大化状態で終了していた場合は、元の位置（上で設定した Left/Top）を保ったまま最大化で復元する。
+            if (_settingsManager.Current.WindowMaximized)
+            {
+                this.WindowState = WindowState.Maximized;
+            }
+
             this.Topmost = _settingsManager.Current.AppTopmost;
 
             ApplyPreviewOrientation(CurrentPreviewMode);
@@ -129,11 +135,15 @@ namespace SCtoolGui
         private void PerformShutdownCleanup()
         {
             // 位置・サイズ保存は冪等なので毎回行う。
-            if (this.WindowState == WindowState.Normal)
-            {
-                _settingsManager.Current.WindowLeft = this.Left;
-                _settingsManager.Current.WindowTop = this.Top;
-            }
+            // 最大化中は RestoreBounds（元の位置）を保存し、次回は最大化で復元する。
+            bool isMaximized = this.WindowState == WindowState.Maximized;
+            var placement = WindowPlacementLogic.Resolve(
+                isMaximized,
+                this.Left, this.Top,
+                this.RestoreBounds.Left, this.RestoreBounds.Top);
+            _settingsManager.Current.WindowLeft = placement.left;
+            _settingsManager.Current.WindowTop = placement.top;
+            _settingsManager.Current.WindowMaximized = placement.maximized;
 
             SaveWindowSizeForCurrentMode();
 
@@ -448,15 +458,29 @@ namespace SCtoolGui
         /// <summary>現在の窓サイズを現在モードのサイズとして記憶する。</summary>
         private void SaveWindowSizeForCurrentMode()
         {
-            if (this.WindowState != WindowState.Normal) return;
-            var s = _settingsManager.Current;
-            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            // 最大化中は RestoreBounds（元のサイズ）を保存する。最小化中は保存しない。
+            double width, height;
+            if (this.WindowState == WindowState.Maximized)
             {
-                s.HorizontalWindowWidth = this.Width; s.HorizontalWindowHeight = this.Height;
+                width = this.RestoreBounds.Width; height = this.RestoreBounds.Height;
+            }
+            else if (this.WindowState == WindowState.Normal)
+            {
+                width = this.Width; height = this.Height;
             }
             else
             {
-                s.VerticalWindowWidth = this.Width; s.VerticalWindowHeight = this.Height;
+                return; // 最小化中はサイズを更新しない
+            }
+
+            var s = _settingsManager.Current;
+            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            {
+                s.HorizontalWindowWidth = width; s.HorizontalWindowHeight = height;
+            }
+            else
+            {
+                s.VerticalWindowWidth = width; s.VerticalWindowHeight = height;
             }
         }
 
