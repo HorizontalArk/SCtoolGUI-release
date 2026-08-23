@@ -79,6 +79,7 @@
                 <ComboBox x:Name="CmbCopySource" Width="200">
                     <ComboBoxItem Content="最後に保存した画像"/>
                     <ComboBoxItem Content="一時プレビュー"/>
+                    <ComboBoxItem Content="最新のプレビューを取得してコピー"/>
                 </ComboBox>
             </StackPanel>
 

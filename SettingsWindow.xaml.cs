@@ -72,7 +72,12 @@ namespace SCtoolGui
             };
 
             ChkUseWindowTitleForFileName.IsChecked = useWindowTitleForFileName;
-            CmbCopySource.SelectedIndex = copySource == "TempPreview" ? 1 : 0;
+            CmbCopySource.SelectedIndex = copySource switch
+            {
+                "TempPreview" => 1,
+                "FreshPreview" => 2,
+                _ => 0,
+            };
         }
 
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
@@ -153,7 +158,12 @@ namespace SCtoolGui
             };
 
             ResultUseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
-            ResultCopySource = CmbCopySource.SelectedIndex == 1 ? "TempPreview" : "LastSaved";
+            ResultCopySource = CmbCopySource.SelectedIndex switch
+            {
+                1 => "TempPreview",
+                2 => "FreshPreview",
+                _ => "LastSaved",
+            };
 
             this.DialogResult = true;
         }

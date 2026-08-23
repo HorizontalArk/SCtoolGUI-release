@@ -334,6 +334,7 @@
                                            VerticalAlignment="Center"/>
                                 <Button.ContextMenu>
                                     <ContextMenu>
+                                        <MenuItem Header="最新のプレビューを取得してコピー" Click="MenuCopyFreshPreview_Click"/>
                                         <MenuItem Header="一時プレビューをコピー" Click="MenuCopyTempPreview_Click"/>
                                         <MenuItem Header="最後に保存した画像をコピー" Click="MenuCopyLastSaved_Click"/>
                                     </ContextMenu>

@@ -208,11 +208,22 @@ namespace SCtoolGui
         private void MenuCopyLastSaved_Click(object sender, RoutedEventArgs e)
             => CopyToClipboard(CopyTarget.LastSaved, isAuto: false);
 
+        // スプリットボタン ▽ メニュー「最新のプレビューを取得してコピー」
+        private void MenuCopyFreshPreview_Click(object sender, RoutedEventArgs e)
+            => CopyToClipboard(CopyTarget.FreshPreview, isAuto: false);
+
         /// <summary>指定した対象の画像をクリップボードにコピーする。対象が無ければ警告ログを出す。</summary>
         private void CopyToClipboard(CopyTarget target, bool isAuto)
         {
             try
             {
+                // FreshPreview はその場で一時プレビューを撮り直し、以降は TempPreview と同じ扱いにする。
+                if (target == CopyTarget.FreshPreview)
+                {
+                    if (!CaptureTempPreview(verbose: true)) return; // 失敗理由は CaptureTempPreview がログ済み
+                    target = CopyTarget.TempPreview;
+                }
+
                 string? path = CopyTargetResolver.Resolve(
                     target,
                     TempPreviewPath, File.Exists(TempPreviewPath),
