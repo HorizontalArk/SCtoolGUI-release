@@ -80,5 +80,9 @@ namespace SCtoolGui
         public static string UpdateUpToDate => Get(nameof(UpdateUpToDate));
         public static string UpdateCheckFailed => Get(nameof(UpdateCheckFailed));
         public static string UpdateDownloading => Get(nameof(UpdateDownloading));
+
+        // アップデート確認ダイアログ
+        public static string UpdateConfirmBody => Get(nameof(UpdateConfirmBody));
+        public static string UpdateConfirmTitle => Get(nameof(UpdateConfirmTitle));
     }
 }

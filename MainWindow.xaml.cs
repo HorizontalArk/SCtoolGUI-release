@@ -598,6 +598,13 @@ namespace SCtoolGui
         {
             if (_pendingUpdate == null || _isUpdating) return;
 
+            // 更新は再起動を伴い、処理中は操作できないため、実行前に確認する。
+            var answer = MessageBox.Show(
+                LogMessages.UpdateConfirmBody,
+                LogMessages.UpdateConfirmTitle,
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (answer != MessageBoxResult.Yes) return;
+
             // 押下と同時に（DL開始前に）操作をロックする。DLに時間がかかっても
             // 「押したのに無反応」に見えないよう、オーバーレイを先に出す。
             _isUpdating = true;

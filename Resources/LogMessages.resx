@@ -222,4 +222,12 @@
   <data name="UpdateDownloading" xml:space="preserve">
     <value>アップデートをダウンロードして適用します...</value>
   </data>
+  <data name="UpdateConfirmBody" xml:space="preserve">
+    <value>アップデートをダウンロードして適用します。
+完了後、アプリは自動的に再起動します。
+処理中はキャプチャなどの操作ができません。よろしいですか？</value>
+  </data>
+  <data name="UpdateConfirmTitle" xml:space="preserve">
+    <value>アップデートの確認</value>
+  </data>
 </root>
