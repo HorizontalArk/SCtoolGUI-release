@@ -35,6 +35,15 @@ namespace SCtoolGui
         public bool ResetSettingsOnWindowChange { get; set; } = true;
         public bool AutoCopyClipboard { get; set; } = true;
 
+        /// <summary>キャプチャとプレビューのフォーカス復帰設定を統一するか。ON ならプレビューはキャプチャ側に追従する。</summary>
+        public bool UnifyCaptureAndPreviewFocus { get; set; } = true;
+
+        /// <summary>キャプチャ後に自アプリを前面へ戻すか。false なら対象ウィンドウをアクティブのまま。</summary>
+        public bool RestoreFocusToToolOnCapture { get; set; } = false;
+
+        /// <summary>プレビュー取得後に自アプリを前面へ戻すか（統一 OFF のときのみ有効）。</summary>
+        public bool RestoreFocusToToolOnPreview { get; set; } = false;
+
         /// <summary>ファイル名に実ウィンドウタイトルを使うか。false なら登録名（従来どおり）。フォルダ名は常に登録名。</summary>
         public bool UseWindowTitleForFileName { get; set; } = false;
 
