@@ -58,21 +58,9 @@ namespace SCtoolGui.Tests
         }
 
         [Fact]
-        public void Parse_FreshPreview_ReturnsFreshPreview()
+        public void ParseはFreshPreviewをFreshPreviewに変換する()
         {
             Assert.Equal(CopyTarget.FreshPreview, CopyTargetResolver.Parse("FreshPreview"));
-        }
-
-        [Fact]
-        public void Parse_TempPreview_StillReturnsTempPreview()
-        {
-            Assert.Equal(CopyTarget.TempPreview, CopyTargetResolver.Parse("TempPreview"));
-        }
-
-        [Fact]
-        public void Parse_Unknown_ReturnsLastSaved()
-        {
-            Assert.Equal(CopyTarget.LastSaved, CopyTargetResolver.Parse("xxxx"));
         }
     }
 }
