@@ -21,6 +21,17 @@ namespace SCtoolGui
         /// <summary>最後に保存した画像が実際にディスク上に存在するか。</summary>
         private bool HasLastCapture => !string.IsNullOrEmpty(_lastCapturedPath) && File.Exists(_lastCapturedPath);
 
+        /// <summary>キャプチャ後に自アプリを前面へ戻すべきか（設定に基づく実効値）。</summary>
+        private bool ShouldRestoreFocusAfterCapture =>
+            FocusRestoreLogic.AfterCapture(_settingsManager.Current.RestoreFocusToToolOnCapture);
+
+        /// <summary>プレビュー取得後に自アプリを前面へ戻すべきか（設定に基づく実効値）。</summary>
+        private bool ShouldRestoreFocusAfterPreview =>
+            FocusRestoreLogic.AfterPreview(
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
+                _settingsManager.Current.RestoreFocusToToolOnCapture,
+                _settingsManager.Current.RestoreFocusToToolOnPreview);
+
         /// <summary>現在のカット量。カットOFF時や数値が不正な場合は 0。</summary>
         private int CurrentCutValue =>
             (ChkCutTab?.IsChecked == true && int.TryParse(TxtTopCut?.Text, out int val)) ? Math.Max(0, val) : 0;
@@ -62,9 +73,8 @@ namespace SCtoolGui
             }
             finally
             {
-                // プレビュー取得のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す。
-                // （対象が最小化などでプレビューに失敗しても、ツールが隠れたままにならないようにする）
-                BringToolToForeground();
+                // プレビュー取得のため対象を前面化した可能性がある。設定で有効なときだけツールを前面へ戻す。
+                if (ShouldRestoreFocusAfterPreview) BringToolToForeground();
             }
         }
 

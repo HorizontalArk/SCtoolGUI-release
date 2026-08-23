@@ -3,6 +3,15 @@ using System.Windows;
 
 namespace SCtoolGui
 {
+    /// <summary>bool を反転する。統一チェック ON のときプレビュー個別項目を無効化するために使う。</summary>
+    public class InverseBoolConverter : System.Windows.Data.IValueConverter
+    {
+        public object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            => value is bool b ? !b : true;
+        public object ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            => value is bool b ? !b : false;
+    }
+
     public partial class SettingsWindow : Window
     {
         public string ResultSaveDir { get; private set; } = "";
@@ -29,7 +38,11 @@ namespace SCtoolGui
         public bool ResultUseWindowTitleForFileName { get; private set; }
         public string ResultCopySource { get; private set; } = "LastSaved";
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource)
+        public bool ResultUnifyCaptureAndPreviewFocus { get; private set; } = true;
+        public bool ResultRestoreFocusToToolOnCapture { get; private set; }
+        public bool ResultRestoreFocusToToolOnPreview { get; private set; }
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource, bool unifyFocus, bool restoreOnCapture, bool restoreOnPreview)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -78,6 +91,10 @@ namespace SCtoolGui
                 "FreshPreview" => 2,
                 _ => 0,
             };
+
+            ChkUnifyFocus.IsChecked = unifyFocus;
+            ChkRestoreFocusOnCapture.IsChecked = restoreOnCapture;
+            ChkRestoreFocusOnPreview.IsChecked = restoreOnPreview;
         }
 
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
@@ -164,6 +181,10 @@ namespace SCtoolGui
                 2 => "FreshPreview",
                 _ => "LastSaved",
             };
+
+            ResultUnifyCaptureAndPreviewFocus = ChkUnifyFocus.IsChecked == true;
+            ResultRestoreFocusToToolOnCapture = ChkRestoreFocusOnCapture.IsChecked == true;
+            ResultRestoreFocusToToolOnPreview = ChkRestoreFocusOnPreview.IsChecked == true;
 
             this.DialogResult = true;
         }

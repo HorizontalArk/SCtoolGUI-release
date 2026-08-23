@@ -518,7 +518,10 @@ namespace SCtoolGui
                 _settingsManager.Current.VerticalPreviewSide,
                 _settingsManager.Current.PreviewAutoSwitch,
                 _settingsManager.Current.UseWindowTitleForFileName,
-                _settingsManager.Current.CopySource) { Owner = this };
+                _settingsManager.Current.CopySource,
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
+                _settingsManager.Current.RestoreFocusToToolOnCapture,
+                _settingsManager.Current.RestoreFocusToToolOnPreview) { Owner = this };
             
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
@@ -548,6 +551,9 @@ namespace SCtoolGui
 
                 _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
                 _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus = settingsWin.ResultUnifyCaptureAndPreviewFocus;
+                _settingsManager.Current.RestoreFocusToToolOnCapture = settingsWin.ResultRestoreFocusToToolOnCapture;
+                _settingsManager.Current.RestoreFocusToToolOnPreview = settingsWin.ResultRestoreFocusToToolOnPreview;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
                 if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 

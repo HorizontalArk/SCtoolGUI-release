@@ -154,8 +154,9 @@ namespace SCtoolGui
                 } catch (Exception ex) { Log(LogLevel.Error, LogMessages.CaptureFailed(ex.Message)); }
                 finally
                 {
-                    // 撮影のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す
-                    BringToolToForeground();
+                    // 撮影のため対象を前面化した可能性がある。設定で有効なときだけツールを前面へ戻す。
+                    // 既定は対象ウィンドウをアクティブのままにする（連続撮影しやすくするため）。
+                    if (ShouldRestoreFocusAfterCapture) BringToolToForeground();
                 }
             }
         }

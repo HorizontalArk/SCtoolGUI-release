@@ -1,8 +1,10 @@
 <Window x:Class="SCtoolGui.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SCtoolGui"
         Title="詳細設定" Width="420" SizeToContent="Height" ResizeMode="CanMinimize" WindowStartupLocation="CenterOwner">
     <Window.Resources>
+        <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
         <!-- Win11 風トグルスイッチ（CheckBox を再テンプレート。クリック挙動はそのまま）。
              MainWindow.xaml の同名スタイルと同じ見た目に揃えている。 -->
         <Style x:Key="ToggleSwitch" TargetType="CheckBox">
@@ -73,6 +75,16 @@
             <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
             <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
+
+            <CheckBox x:Name="ChkUnifyFocus" Style="{StaticResource ToggleSwitch}" Content="キャプチャとプレビューのフォーカス設定を統一する" Margin="0,0,0,10"
+                      ToolTip="ONのとき、プレビュー取得後の挙動はキャプチャ後の設定に追従します。"/>
+
+            <CheckBox x:Name="ChkRestoreFocusOnCapture" Style="{StaticResource ToggleSwitch}" Content="キャプチャ後にこのアプリを前面に戻す" Margin="20,0,0,10"
+                      ToolTip="OFF（既定）なら撮影後も対象ウィンドウをアクティブのままにします。"/>
+
+            <CheckBox x:Name="ChkRestoreFocusOnPreview" Style="{StaticResource ToggleSwitch}" Content="プレビュー取得後にこのアプリを前面に戻す" Margin="20,0,0,10"
+                      IsEnabled="{Binding IsChecked, ElementName=ChkUnifyFocus, Converter={StaticResource InverseBoolConverter}}"
+                      ToolTip="「統一する」がOFFのときのみ有効です。"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                 <TextBlock Text="コピーの既定対象:" VerticalAlignment="Center" Margin="0,0,10,0"/>
