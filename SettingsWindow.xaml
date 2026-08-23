@@ -33,6 +33,12 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="track" Property="Opacity" Value="0.85"/>
                             </Trigger>
+                            <!-- 無効時は全体を薄くし、有効/無効を視覚的に区別できるようにする
+                                 （テンプレートを差し替えているため既定の無効表現が効かない）。 -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -76,24 +82,36 @@
 
             <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
 
-            <CheckBox x:Name="ChkUnifyFocus" Style="{StaticResource ToggleSwitch}" Content="キャプチャとプレビューのフォーカス設定を統一する" Margin="0,0,0,10"
-                      ToolTip="ONのとき、プレビュー取得後の挙動はキャプチャ後の設定に追従します。"/>
-
-            <CheckBox x:Name="ChkRestoreFocusOnCapture" Style="{StaticResource ToggleSwitch}" Content="キャプチャ後にこのアプリを前面に戻す" Margin="20,0,0,10"
+            <!-- フォーカス設定は2つの独立したトップレベル項目で構成する。
+                 (1) キャプチャ後の前面復帰（独立した基準設定）。
+                 (2) 「プレビューをキャプチャに合わせる」＝プレビューグループの親トグル。
+                     その子として「プレビュー取得後の前面復帰」を置き、(2)がOFFのときだけ有効化する。
+                 インデントは実際の追従関係（子は親に追従）に一致させる：(1)と(2)は同階層、
+                 (3)だけ(2)の子としてインデントする。 -->
+            <CheckBox x:Name="ChkRestoreFocusOnCapture" Style="{StaticResource ToggleSwitch}" Content="キャプチャ後にこのアプリを前面に戻す" Margin="0,0,0,10"
                       ToolTip="OFF（既定）なら撮影後も対象ウィンドウをアクティブのままにします。"/>
+
+            <CheckBox x:Name="ChkUnifyFocus" Style="{StaticResource ToggleSwitch}" Content="プレビューのフォーカスもキャプチャに合わせる" Margin="0,4,0,10"
+                      ToolTip="ONのとき、プレビュー取得後の挙動は上の「キャプチャ後」の設定に追従します。OFFにすると下で個別に設定できます。"/>
 
             <CheckBox x:Name="ChkRestoreFocusOnPreview" Style="{StaticResource ToggleSwitch}" Content="プレビュー取得後にこのアプリを前面に戻す" Margin="20,0,0,10"
                       IsEnabled="{Binding IsChecked, ElementName=ChkUnifyFocus, Converter={StaticResource InverseBoolConverter}}"
-                      ToolTip="「統一する」がOFFのときのみ有効です。"/>
+                      ToolTip="上の「合わせる」がOFFのときのみ有効です。"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+            <!-- 選択肢の文言が長い（「最新のプレビューを取得してコピー」）ため、固定幅だと
+                 見切れる。ラベルは Auto、コンボは残り幅いっぱい(*)に広げて見切れを防ぐ。 -->
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
                 <TextBlock Text="コピーの既定対象:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox x:Name="CmbCopySource" Width="200">
+                <ComboBox x:Name="CmbCopySource" Grid.Column="1" HorizontalAlignment="Stretch">
                     <ComboBoxItem Content="最後に保存した画像"/>
                     <ComboBoxItem Content="一時プレビュー"/>
                     <ComboBoxItem Content="最新のプレビューを取得してコピー"/>
                 </ComboBox>
-            </StackPanel>
+            </Grid>
 
             <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する" Margin="0,0,0,10"
                       ToolTip="管理者権限で動くアプリを常用する場合に有効にします。"/>
