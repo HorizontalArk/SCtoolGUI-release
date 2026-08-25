@@ -3,6 +3,15 @@ using System.Windows;
 
 namespace SCtoolGui
 {
+    /// <summary>bool を反転する。統一チェック ON のときプレビュー個別項目を無効化するために使う。</summary>
+    public class InverseBoolConverter : System.Windows.Data.IValueConverter
+    {
+        public object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            => value is bool b ? !b : true;
+        public object ConvertBack(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+            => value is bool b ? !b : false;
+    }
+
     public partial class SettingsWindow : Window
     {
         public string ResultSaveDir { get; private set; } = "";
@@ -29,10 +38,14 @@ namespace SCtoolGui
         public bool ResultUseWindowTitleForFileName { get; private set; }
         public string ResultCopySource { get; private set; } = "LastSaved";
 
+        public bool ResultUnifyCaptureAndPreviewFocus { get; private set; } = true;
+        public bool ResultRestoreFocusToToolOnCapture { get; private set; }
+        public bool ResultRestoreFocusToToolOnPreview { get; private set; }
+
         public bool ResultDeveloperModeEnabled { get; private set; }
         public bool ResultIncludePrereleases { get; private set; }
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource, bool developerUnlocked, bool developerModeEnabled, bool includePrereleases)
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource, bool unifyFocus, bool restoreOnCapture, bool restoreOnPreview, bool developerUnlocked, bool developerModeEnabled, bool includePrereleases)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -75,7 +88,16 @@ namespace SCtoolGui
             };
 
             ChkUseWindowTitleForFileName.IsChecked = useWindowTitleForFileName;
-            CmbCopySource.SelectedIndex = copySource == "TempPreview" ? 1 : 0;
+            CmbCopySource.SelectedIndex = copySource switch
+            {
+                "TempPreview" => 1,
+                "FreshPreview" => 2,
+                _ => 0,
+            };
+
+            ChkUnifyFocus.IsChecked = unifyFocus;
+            ChkRestoreFocusOnCapture.IsChecked = restoreOnCapture;
+            ChkRestoreFocusOnPreview.IsChecked = restoreOnPreview;
 
             // マーカー解錠時のみ開発者モードトグルを出す。未解錠なら一切出さない。
             ChkDeveloperMode.Visibility = developerUnlocked ? Visibility.Visible : Visibility.Collapsed;
@@ -204,7 +226,16 @@ namespace SCtoolGui
             };
 
             ResultUseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
-            ResultCopySource = CmbCopySource.SelectedIndex == 1 ? "TempPreview" : "LastSaved";
+            ResultCopySource = CmbCopySource.SelectedIndex switch
+            {
+                1 => "TempPreview",
+                2 => "FreshPreview",
+                _ => "LastSaved",
+            };
+
+            ResultUnifyCaptureAndPreviewFocus = ChkUnifyFocus.IsChecked == true;
+            ResultRestoreFocusToToolOnCapture = ChkRestoreFocusOnCapture.IsChecked == true;
+            ResultRestoreFocusToToolOnPreview = ChkRestoreFocusOnPreview.IsChecked == true;
 
             ResultDeveloperModeEnabled = ChkDeveloperMode.IsChecked == true;
             ResultIncludePrereleases = ChkIncludePrereleases.IsChecked == true;

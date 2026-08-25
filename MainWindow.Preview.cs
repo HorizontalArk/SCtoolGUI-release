@@ -21,6 +21,17 @@ namespace SCtoolGui
         /// <summary>最後に保存した画像が実際にディスク上に存在するか。</summary>
         private bool HasLastCapture => !string.IsNullOrEmpty(_lastCapturedPath) && File.Exists(_lastCapturedPath);
 
+        /// <summary>キャプチャ後に自アプリを前面へ戻すべきか（設定に基づく実効値）。</summary>
+        private bool ShouldRestoreFocusAfterCapture =>
+            FocusRestoreLogic.AfterCapture(_settingsManager.Current.RestoreFocusToToolOnCapture);
+
+        /// <summary>プレビュー取得後に自アプリを前面へ戻すべきか（設定に基づく実効値）。</summary>
+        private bool ShouldRestoreFocusAfterPreview =>
+            FocusRestoreLogic.AfterPreview(
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
+                _settingsManager.Current.RestoreFocusToToolOnCapture,
+                _settingsManager.Current.RestoreFocusToToolOnPreview);
+
         /// <summary>現在のカット量。カットOFF時や数値が不正な場合は 0。</summary>
         private int CurrentCutValue =>
             (ChkCutTab?.IsChecked == true && int.TryParse(TxtTopCut?.Text, out int val)) ? Math.Max(0, val) : 0;
@@ -62,9 +73,8 @@ namespace SCtoolGui
             }
             finally
             {
-                // プレビュー取得のため対象を前面化した可能性があるので、成否に関わらずツールを前面へ戻す。
-                // （対象が最小化などでプレビューに失敗しても、ツールが隠れたままにならないようにする）
-                BringToolToForeground();
+                // プレビュー取得のため対象を前面化した可能性がある。設定で有効なときだけツールを前面へ戻す。
+                if (ShouldRestoreFocusAfterPreview) BringToolToForeground();
             }
         }
 
@@ -93,20 +103,54 @@ namespace SCtoolGui
             }
         }
 
-        /// <summary>保存画像に対する操作ボタン（開く／コピー／削除）の見た目とカーソルを切り替える。</summary>
-        private void SetActionButtonsState(bool enabled)
+        /// <summary>
+        /// 保存画像に対する操作ボタン（開く／コピー／▽／削除）の有効/無効を、実際の可否に合わせて更新する。
+        ///
+        /// 従来は見た目（Opacity/Cursor）だけを変え IsEnabled は true のままで、
+        /// 「禁止表示なのに押せてアプリが判定を返す」という表記と動作の食い違いがあった。
+        /// ここでは IsEnabled で本当に無効化し、対象ごとに判定を分ける：
+        ///   ・開く／削除     … 保存画像が無ければ無効（保存画像に依存するため）。
+        ///   ・コピー本体     … 既定対象が LastSaved かつ保存画像が無いときだけ無効
+        ///                      （TempPreview/FreshPreview 既定なら保存前でも使えるので有効）。
+        ///   ・▽ボタン       … 常に有効（メニューを開くため）。
+        ///   ・▽の各項目      … 「最後に保存した画像」だけ保存画像に連動、他は常に有効。
+        /// </summary>
+        private void UpdateActionButtonsState()
         {
-            double opacity = enabled ? 1.0 : 0.4;
-            Cursor cursor = enabled ? Cursors.Arrow : Cursors.No;
+            bool hasLastCapture = HasLastCapture;
 
-            foreach (var btn in new[] { BtnOpenFile, BtnCopyClipboard, BtnCopyDropdown, BtnDeleteFile })
-            {
-                if (btn == null) continue;
-                btn.Opacity = opacity;
-                btn.Cursor = cursor;
-            }
+            // 開く・削除は保存画像に連動。無効時は対応マスクを出して禁止カーソルを見せる。
+            SetButtonEnabled(BtnOpenFile, hasLastCapture, BtnOpenFileDisableMask);
+            SetButtonEnabled(BtnDeleteFile, hasLastCapture, BtnDeleteFileDisableMask);
 
-            PreviewContentGrid.Cursor = enabled ? Cursors.Hand : Cursors.Arrow;
+            // コピー本体は既定対象と保存画像の有無で判定。
+            var defaultTarget = CopyTargetResolver.Parse(_settingsManager.Current.CopySource);
+            bool copyEnabled = CopyButtonState.IsMainCopyEnabled(defaultTarget, hasLastCapture);
+            // マスクの幅・高さは XAML で BtnCopyClipboard へバインド済みなので、可視状態だけ切り替える。
+            SetButtonEnabled(BtnCopyClipboard, copyEnabled, BtnCopyClipboardDisableMask);
+
+            // ▽ボタン自体は常に有効。メニュー項目のうち「最後に保存した画像」だけ保存画像に連動。
+            SetButtonEnabled(BtnCopyDropdown, true);
+            if (MenuCopyLastSaved != null) MenuCopyLastSaved.IsEnabled = hasLastCapture;
+
+            // プレビュー画像はダブルクリックで開けるため、保存画像があるときだけ手のひらカーソルにする。
+            PreviewContentGrid.Cursor = hasLastCapture ? Cursors.Hand : Cursors.Arrow;
+        }
+
+        /// <summary>
+        /// ボタンの IsEnabled と見た目（薄さ）を設定する。
+        /// 無効時の「禁止」カーソルは、WPF が IsEnabled=false のコントロールで Cursor を
+        /// 無視するため、ボタンに重ねた透明オーバーレイ(disableMask)側で出す。
+        /// disableMask は無効時のみ表示し、禁止カーソル表示とクリック吸収を担う。
+        /// </summary>
+        private static void SetButtonEnabled(System.Windows.Controls.Control? btn, bool enabled,
+            System.Windows.UIElement? disableMask = null)
+        {
+            if (btn == null) return;
+            btn.IsEnabled = enabled;
+            btn.Opacity = enabled ? 1.0 : 0.4;
+            if (disableMask != null)
+                disableMask.Visibility = enabled ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void UpdateToolTips()
@@ -129,8 +173,18 @@ namespace SCtoolGui
             ImgPreview.ToolTip = imgTooltip;
 
             BtnOpenFile.ToolTip = hasLastCapture ? "最後に保存した画像を既定のアプリで開きます" : NoImageMessage;
-            BtnCopyClipboard.ToolTip = hasLastCapture ? "最後に保存した画像をクリップボードにコピーします" : NoImageMessage;
             BtnDeleteFile.ToolTip = hasLastCapture ? "最後に保存した画像をPCから完全に削除します" : NoImageMessage;
+
+            // コピー本体は既定対象(CopySource)に従うため、ToolTip も既定対象に合わせる。
+            // 有効/無効判定(CopyButtonState)と文言を一致させ、「無効なのに別案内」を防ぐ。
+            var defaultTarget = CopyTargetResolver.Parse(_settingsManager.Current.CopySource);
+            BtnCopyClipboard.ToolTip = defaultTarget switch
+            {
+                CopyTarget.TempPreview => "一時プレビューをクリップボードにコピーします",
+                CopyTarget.FreshPreview => "最新のプレビューを取得してクリップボードにコピーします",
+                // LastSaved: 保存画像が無いと無効になるため、その場合は理由を示す。
+                _ => hasLastCapture ? "最後に保存した画像をクリップボードにコピーします" : NoImageMessage,
+            };
         }
 
         /// <summary>プレビュー画像を差し替え、カット表示とボタン状態を現在の状態に合わせる。</summary>
@@ -151,13 +205,9 @@ namespace SCtoolGui
 
             UpdateCutOverlay();
 
-            BtnOpenFile.IsEnabled = true;
-            BtnCopyClipboard.IsEnabled = true;
-            BtnCopyDropdown.IsEnabled = true;
-            BtnDeleteFile.IsEnabled = true;
-
-            // 一時プレビュー中かではなく、画像が存在するかどうかでボタンの見た目を変える
-            SetActionButtonsState(HasLastCapture);
+            // ボタンの有効/無効は UpdateActionButtonsState が対象ごとに判定する
+            // （開く・削除・コピー本体は保存画像や既定対象に連動、▽は常に有効）。
+            UpdateActionButtonsState();
 
             UpdateToolTips();
 
@@ -208,11 +258,22 @@ namespace SCtoolGui
         private void MenuCopyLastSaved_Click(object sender, RoutedEventArgs e)
             => CopyToClipboard(CopyTarget.LastSaved, isAuto: false);
 
+        // スプリットボタン ▽ メニュー「最新のプレビューを取得してコピー」
+        private void MenuCopyFreshPreview_Click(object sender, RoutedEventArgs e)
+            => CopyToClipboard(CopyTarget.FreshPreview, isAuto: false);
+
         /// <summary>指定した対象の画像をクリップボードにコピーする。対象が無ければ警告ログを出す。</summary>
         private void CopyToClipboard(CopyTarget target, bool isAuto)
         {
             try
             {
+                // FreshPreview はその場で一時プレビューを撮り直し、以降は TempPreview と同じ扱いにする。
+                if (target == CopyTarget.FreshPreview)
+                {
+                    if (!CaptureTempPreview(verbose: true)) return; // 失敗理由は CaptureTempPreview がログ済み
+                    target = CopyTarget.TempPreview;
+                }
+
                 string? path = CopyTargetResolver.Resolve(
                     target,
                     TempPreviewPath, File.Exists(TempPreviewPath),
@@ -267,8 +328,9 @@ namespace SCtoolGui
 
                     _lastCapturedPath = "";
 
-                    // 削除後はファイルが存在しなくなるため、ボタンを無効状態の見た目に戻す
-                    SetActionButtonsState(false);
+                    // 削除後は保存画像が無くなるため、ボタンの有効/無効を再判定する
+                    // （コピー本体は既定対象しだいで有効のまま残ることもある）。
+                    UpdateActionButtonsState();
                     UpdateToolTips(); // 削除後にツールチップも更新
                 }
                 catch (Exception ex) {

@@ -20,6 +20,9 @@ namespace SCtoolGui
         /// <summary>アップデート適用中（DL〜再起動待ち）。この間は撮影など主要操作を抑止する。</summary>
         private bool _isUpdating;
 
+        /// <summary>終了処理のうち一回限りの破棄を二重実行しないためのガード。</summary>
+        private bool _cleanupDone;
+
         /// <summary>Prompt を既に出した対象キー（対象ごと1回まで誘導するため）。</summary>
         private readonly System.Collections.Generic.HashSet<string> _autoSwitchPromptedTargets = new();
 
@@ -32,11 +35,26 @@ namespace SCtoolGui
             ThemeManager.Apply(_settingsManager.Current.Theme);
             ApplyWindowIcon();
 
+            // 更新再起動で Velopack が .lnk を作り直すと、ユーザー設定アイコンが既定(app.ico)へ
+            // 戻ってしまう。従来は詳細設定を保存し直すまで復活しなかったため、起動時に
+            // （インストール版かつアイコン設定済みなら）.lnk のアイコンを毎回再適用して自動復活させる。
+            // 反映は SHChangeNotify 後、次回起動/サインインで確実化する（Windows の仕様）。
+            if (_updateService.IsInstalled && !string.IsNullOrEmpty(_settingsManager.Current.IconPath))
+            {
+                ApplyIconToShortcuts();
+            }
+
             if (_settingsManager.Current.WindowLeft.HasValue && _settingsManager.Current.WindowTop.HasValue)
             {
                 this.WindowStartupLocation = WindowStartupLocation.Manual;
                 this.Left = _settingsManager.Current.WindowLeft.Value;
                 this.Top = _settingsManager.Current.WindowTop.Value;
+            }
+
+            // 最大化状態で終了していた場合は、元の位置（上で設定した Left/Top）を保ったまま最大化で復元する。
+            if (_settingsManager.Current.WindowMaximized)
+            {
+                this.WindowState = WindowState.Maximized;
             }
 
             this.Topmost = _settingsManager.Current.AppTopmost;
@@ -45,6 +63,11 @@ namespace SCtoolGui
 
             InitializeWindowList();
             InitializeCaptureAndHotKey();
+
+            // 起動直後（プレビュー未表示）でも、既定対象がプレビュー系ならコピー本体を有効にするなど、
+            // ボタンの有効/無効と ToolTip を実際の可否に合わせておく。
+            UpdateActionButtonsState();
+            UpdateToolTips();
 
             CheckUpdates();
 
@@ -120,13 +143,24 @@ namespace SCtoolGui
             catch { return false; }
         }
 
-        protected override void OnClosed(EventArgs e)
+        /// <summary>
+        /// 終了時のクリーンアップ。ウィンドウ状態・設定の保存（冪等）と、
+        /// 対象ウィンドウの最前面固定解除、HotKey 破棄（一回限り）を行う。
+        /// 通常終了（OnClosed）と更新再起動の直前の両方から呼ぶ。
+        /// Velopack の再起動は WPF の終了フローを経由しないため、更新前に明示的に呼ぶ必要がある。
+        /// </summary>
+        private void PerformShutdownCleanup()
         {
-            if (this.WindowState == WindowState.Normal)
-            {
-                _settingsManager.Current.WindowLeft = this.Left;
-                _settingsManager.Current.WindowTop = this.Top;
-            }
+            // 位置・サイズ保存は冪等なので毎回行う。
+            // 最大化中は RestoreBounds（元の位置）を保存し、次回は最大化で復元する。
+            bool isMaximized = this.WindowState == WindowState.Maximized;
+            var placement = WindowPlacementLogic.Resolve(
+                isMaximized,
+                this.Left, this.Top,
+                this.RestoreBounds.Left, this.RestoreBounds.Top);
+            _settingsManager.Current.WindowLeft = placement.left;
+            _settingsManager.Current.WindowTop = placement.top;
+            _settingsManager.Current.WindowMaximized = placement.maximized;
 
             SaveWindowSizeForCurrentMode();
 
@@ -140,10 +174,20 @@ namespace SCtoolGui
                 }
             }
             catch { }
-            
-            _settingsManager.Save();
-            _hotKeyManager?.Dispose();
 
+            _settingsManager.Save();
+
+            // HotKey 破棄は一回限り。二重実行を避ける。
+            if (!_cleanupDone)
+            {
+                _hotKeyManager?.Dispose();
+                _cleanupDone = true;
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            PerformShutdownCleanup();
             base.OnClosed(e);
         }
 
@@ -431,15 +475,29 @@ namespace SCtoolGui
         /// <summary>現在の窓サイズを現在モードのサイズとして記憶する。</summary>
         private void SaveWindowSizeForCurrentMode()
         {
-            if (this.WindowState != WindowState.Normal) return;
-            var s = _settingsManager.Current;
-            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            // 最大化中は RestoreBounds（元のサイズ）を保存する。最小化中は保存しない。
+            double width, height;
+            if (this.WindowState == WindowState.Maximized)
             {
-                s.HorizontalWindowWidth = this.Width; s.HorizontalWindowHeight = this.Height;
+                width = this.RestoreBounds.Width; height = this.RestoreBounds.Height;
+            }
+            else if (this.WindowState == WindowState.Normal)
+            {
+                width = this.Width; height = this.Height;
             }
             else
             {
-                s.VerticalWindowWidth = this.Width; s.VerticalWindowHeight = this.Height;
+                return; // 最小化中はサイズを更新しない
+            }
+
+            var s = _settingsManager.Current;
+            if (CurrentPreviewMode == PreviewMode.Horizontal)
+            {
+                s.HorizontalWindowWidth = width; s.HorizontalWindowHeight = height;
+            }
+            else
+            {
+                s.VerticalWindowWidth = width; s.VerticalWindowHeight = height;
             }
         }
 
@@ -489,6 +547,9 @@ namespace SCtoolGui
                 _settingsManager.Current.PreviewAutoSwitch,
                 _settingsManager.Current.UseWindowTitleForFileName,
                 _settingsManager.Current.CopySource,
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
+                _settingsManager.Current.RestoreFocusToToolOnCapture,
+                _settingsManager.Current.RestoreFocusToToolOnPreview,
                 developerUnlocked,
                 _settingsManager.Current.DeveloperModeEnabled,
                 _settingsManager.Current.IncludePrereleases) { Owner = this };
@@ -544,6 +605,10 @@ namespace SCtoolGui
                 _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
                 _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
 
+                _settingsManager.Current.UnifyCaptureAndPreviewFocus = settingsWin.ResultUnifyCaptureAndPreviewFocus;
+                _settingsManager.Current.RestoreFocusToToolOnCapture = settingsWin.ResultRestoreFocusToToolOnCapture;
+                _settingsManager.Current.RestoreFocusToToolOnPreview = settingsWin.ResultRestoreFocusToToolOnPreview;
+
                 _settingsManager.Current.DeveloperModeEnabled = settingsWin.ResultDeveloperModeEnabled;
                 _settingsManager.Current.IncludePrereleases = settingsWin.ResultIncludePrereleases;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
@@ -554,6 +619,12 @@ namespace SCtoolGui
                 SaveAndLog(LogMessages.SettingsUpdated);
                 RegisterHotKey();
                 UpdateButtonText();
+
+                // コピーの既定対象が変わると、保存画像が無い状態でもコピー本体ボタンの
+                // 有効/無効が変わる（LastSaved→無効、プレビュー系→有効）ため再評価する。
+                // ToolTip も既定対象に応じて変わるので合わせて更新する。
+                UpdateActionButtonsState();
+                UpdateToolTips();
 
                 UpdateCurrentSavePathDisplay();
 
@@ -640,6 +711,13 @@ namespace SCtoolGui
         {
             if (_pendingUpdate == null || _isUpdating) return;
 
+            // 更新は再起動を伴い、処理中は操作できないため、実行前に確認する。
+            var answer = MessageBox.Show(
+                LogMessages.UpdateConfirmBody,
+                LogMessages.UpdateConfirmTitle,
+                MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (answer != MessageBoxResult.Yes) return;
+
             // 押下と同時に（DL開始前に）操作をロックする。DLに時間がかかっても
             // 「押したのに無反応」に見えないよう、オーバーレイを先に出す。
             _isUpdating = true;
@@ -649,9 +727,13 @@ namespace SCtoolGui
 
             try
             {
-                // Velopack のDLコールバックは別スレッドから来るため、Progress<T> でUIスレッドへ戻す。
+                // 更新再起動は WPF の終了フローを経由しないため、UpdateFlow で
+                // 終了処理(PerformShutdownCleanup=位置・設定の保存)を必ず DL より先に実行する
+                // （保存漏れ防止。順序は UpdateFlow が保証し、UpdateFlowTests で検証している）。
                 IProgress<int> progress = new Progress<int>(UpdateOverlayProgress);
-                await _updateService.DownloadAndApplyAsync(_pendingUpdate, progress.Report);
+                await UpdateFlow.RunAsync(
+                    cleanup: PerformShutdownCleanup,
+                    downloadAndApply: () => _updateService.DownloadAndApplyAsync(_pendingUpdate, progress.Report));
                 // 成功時はここに戻らず再起動する。
             }
             catch (Exception ex)

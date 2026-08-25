@@ -56,5 +56,11 @@ namespace SCtoolGui.Tests
         {
             Assert.Equal(CopyTarget.LastSaved, CopyTargetResolver.Parse("なにか"));
         }
+
+        [Fact]
+        public void ParseはFreshPreviewをFreshPreviewに変換する()
+        {
+            Assert.Equal(CopyTarget.FreshPreview, CopyTargetResolver.Parse("FreshPreview"));
+        }
     }
 }

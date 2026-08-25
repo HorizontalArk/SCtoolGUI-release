@@ -40,6 +40,10 @@
     <Compile Include="..\LogFormatter.cs" Link="Source\LogFormatter.cs" />
     <Compile Include="..\CopyTargetResolver.cs" Link="Source\CopyTargetResolver.cs" />
     <Compile Include="..\DeveloperModeGate.cs" Link="Source\DeveloperModeGate.cs" />
+    <Compile Include="..\WindowPlacementLogic.cs" Link="Source\WindowPlacementLogic.cs" />
+    <Compile Include="..\FocusRestoreLogic.cs" Link="Source\FocusRestoreLogic.cs" />
+    <Compile Include="..\UpdateFlow.cs" Link="Source\UpdateFlow.cs" />
+    <Compile Include="..\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
   </ItemGroup>
 
 </Project>

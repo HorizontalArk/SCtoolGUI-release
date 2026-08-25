@@ -3,10 +3,12 @@ namespace SCtoolGui
     /// <summary>クリップボードにコピーする対象の種別。</summary>
     public enum CopyTarget
     {
-        /// <summary>撮影前の確認用に表示している一時プレビュー画像。</summary>
+        /// <summary>撮影前の確認用に表示している一時プレビュー画像（既に取得済みのもの）。</summary>
         TempPreview,
         /// <summary>直近に撮影・保存した本番画像。</summary>
         LastSaved,
+        /// <summary>その場で一時プレビューを撮り直し、その最新画像を対象にする。</summary>
+        FreshPreview,
     }
 
     /// <summary>
@@ -33,6 +35,11 @@ namespace SCtoolGui
 
         /// <summary>設定文字列を種別に変換する。未知の値は LastSaved 扱い。</summary>
         public static CopyTarget Parse(string source)
-            => source == "TempPreview" ? CopyTarget.TempPreview : CopyTarget.LastSaved;
+            => source switch
+            {
+                "TempPreview" => CopyTarget.TempPreview,
+                "FreshPreview" => CopyTarget.FreshPreview,
+                _ => CopyTarget.LastSaved,
+            };
     }
 }
