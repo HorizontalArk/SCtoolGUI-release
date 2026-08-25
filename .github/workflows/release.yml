@@ -31,6 +31,11 @@ jobs:
         run: |
           $v = "${{ github.ref_name }}".TrimStart('v')
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          # タグに '-'（例: 1.0.15-pre）が含まれればプレリリース扱いにする。
+          # プレリリースは GitHub Release の pre-release フラグを立て、
+          # 更新側で prerelease を取り込む設定(開発者モード)のユーザーだけに配信する。
+          $isPre = if ($v -like '*-*') { 'true' } else { 'false' }
+          "is_prerelease=$isPre" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       # Velopack は単一ファイル化しない。フォルダ一式を発行する。
       - name: 発行（self-contained フォルダ）
@@ -60,11 +65,26 @@ jobs:
           --packTitle SCtoolGui
           --shortcuts None
 
-      - name: GitHub Release へ公開
+      # 通常リリース（タグに '-' なし）。全ユーザーの自動更新に配信される。
+      - name: GitHub Release へ公開（通常）
+        if: steps.ver.outputs.is_prerelease == 'false'
         run: >
           vpk upload github
           --repoUrl https://github.com/HorizontalArk/SCtoolGUI-release
           --token ${{ secrets.GITHUB_TOKEN }}
           --tag ${{ github.ref_name }}
           --releaseName ${{ github.ref_name }}
+          --publish
+
+      # プレリリース（タグに '-' あり、例: v1.0.15-pre）。--pre で pre-release フラグを立て、
+      # prerelease を取り込む設定のユーザー（開発者モード）だけに配信する。
+      - name: GitHub Release へ公開（プレリリース）
+        if: steps.ver.outputs.is_prerelease == 'true'
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/HorizontalArk/SCtoolGUI-release
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --tag ${{ github.ref_name }}
+          --releaseName ${{ github.ref_name }}
+          --pre
           --publish
