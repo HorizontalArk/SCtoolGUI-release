@@ -1,7 +1,7 @@
 <Window x:Class="SCtoolGui.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="詳細設定" Width="420" SizeToContent="Height" ResizeMode="CanMinimize" WindowStartupLocation="CenterOwner">
+        Title="詳細設定" Width="440" Height="560" ResizeMode="CanMinimize" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <!-- Win11 風トグルスイッチ（CheckBox を再テンプレート。クリック挙動はそのまま）。
              MainWindow.xaml の同名スタイルと同じ見た目に揃えている。 -->
@@ -37,104 +37,170 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <Grid Margin="20">
-        <StackPanel>
-            <TextBlock Text="保存先フォルダ:" Margin="0,0,0,5"/>
-            <Grid Margin="0,0,0,15">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="TxtSaveDir" VerticalContentAlignment="Center" Padding="5"/>
-                <Button Content="参照..." Grid.Column="1" Margin="5,0,0,0" Padding="10,0" Click="BtnBrowse_Click"/>
-            </Grid>
+    <!-- 設定項目が増えたため3タブ（基本／撮影／外観）に整理する。
+         保存・キャンセルはタブ外の下部に固定し、各タブは ScrollViewer で縦スクロール可能にする。
+         x:Name は従来のまま維持し、コードビハインドは無変更。 -->
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="ホットキー設定 (デフォルト: Ctrl+Shift+S):" Margin="0,0,0,5"/>
-            <!-- Fluentテーマの CheckBox は MinWidth が大きく、Ctrl/Shift/Alt とキー選択を
-                 横一列に並べると固定幅420pxの窓からはみ出してキー選択が見切れる。
-                 そのためキー選択は次の行に分ける。 -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                <CheckBox x:Name="ChkCtrl" Content="Ctrl" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <CheckBox x:Name="ChkShift" Content="Shift" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <CheckBox x:Name="ChkAlt" Content="Alt" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                <TextBlock Text="キー:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <ComboBox x:Name="CmbKey" Width="80" MinHeight="28" VerticalContentAlignment="Center"/>
-            </StackPanel>
+        <TabControl Grid.Row="0" Background="Transparent"
+                    BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="0,1,0,0">
+            <!-- ===== 基本タブ ===== -->
+            <TabItem Header="基本">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
+                    <StackPanel>
+                        <TextBlock Text="保存先フォルダ:" Margin="0,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtSaveDir" VerticalContentAlignment="Center" Padding="5"/>
+                            <Button Content="参照..." Grid.Column="1" Margin="5,0,0,0" Padding="10,0" Click="BtnBrowse_Click"/>
+                        </Grid>
 
-            <CheckBox x:Name="ChkAppTopmost" Style="{StaticResource ToggleSwitch}" Content="SCtool本体を常に最前面に表示する" Margin="0,0,0,10"/>
-            
-            <CheckBox x:Name="ChkSaveInWindowFolder" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ名のフォルダに分類して保存する" Margin="0,0,0,10"/>
+                        <TextBlock Text="ホットキー設定 (デフォルト: Ctrl+Shift+S):" Margin="0,0,0,5"/>
+                        <!-- Fluentテーマの CheckBox は MinWidth が大きく、Ctrl/Shift/Alt とキー選択を
+                             横一列に並べると窓からはみ出してキー選択が見切れる。そのため次の行に分ける。 -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <CheckBox x:Name="ChkCtrl" Content="Ctrl" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <CheckBox x:Name="ChkShift" Content="Shift" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <CheckBox x:Name="ChkAlt" Content="Alt" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="キー:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox x:Name="CmbKey" Width="80" MinHeight="28" VerticalContentAlignment="Center"/>
+                        </StackPanel>
 
-            <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う" Margin="0,0,0,10"
-                      ToolTip="OFFなら登録名（表示名）をファイル名に使います。フォルダ名は設定に関わらず常に登録名です。"/>
+                        <CheckBox x:Name="ChkAppTopmost" Style="{StaticResource ToggleSwitch}" Content="SCtool本体を常に最前面に表示する" Margin="0,0,0,10"/>
 
-            <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="ChkSaveInWindowFolder" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ名のフォルダに分類して保存する" Margin="0,0,0,10"/>
 
-            <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する" Margin="0,0,0,10"
+                                  ToolTip="管理者権限で動くアプリを常用する場合に有効にします。"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                <TextBlock Text="コピーの既定対象:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox x:Name="CmbCopySource" Width="200">
-                    <ComboBoxItem Content="最後に保存した画像"/>
-                    <ComboBoxItem Content="一時プレビュー"/>
-                </ComboBox>
-            </StackPanel>
+                        <!-- 開発者モードトグル。マーカーファイル(developer.key)解錠時のみ表示する。
+                             ON にすると「開発者」タブが出現する。未解錠なら一切表示しない。 -->
+                        <CheckBox x:Name="ChkDeveloperMode" Style="{StaticResource ToggleSwitch}"
+                                  Content="開発者モード" Margin="0,10,0,0" Visibility="Collapsed"
+                                  Checked="ChkDeveloperMode_Changed" Unchecked="ChkDeveloperMode_Changed"
+                                  ToolTip="プレリリースの取り込みや任意バージョンへの変更を有効にします。"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-            <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する" Margin="0,0,0,10"
-                      ToolTip="管理者権限で動くアプリを常用する場合に有効にします。"/>
+            <!-- ===== 撮影タブ ===== -->
+            <TabItem Header="撮影">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う" Margin="0,0,0,10"
+                                  ToolTip="OFFなら登録名（表示名）をファイル名に使います。フォルダ名は設定に関わらず常に登録名です。"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
-                <TextBlock Text="テーマ:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox x:Name="CmbTheme" Width="190">
-                    <ComboBoxItem Content="システム（OSに追従）"/>
-                    <ComboBoxItem Content="ライト"/>
-                    <ComboBoxItem Content="ダーク"/>
-                </ComboBox>
-            </StackPanel>
+                        <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                <TextBlock Text="縦モード時のプレビュー位置:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox x:Name="CmbVerticalSide" Width="120">
-                    <ComboBoxItem Content="右"/>
-                    <ComboBoxItem Content="左"/>
-                </ComboBox>
-            </StackPanel>
+                        <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
-                <TextBlock Text="縦横の自動切替:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <ComboBox x:Name="CmbAutoSwitch" Width="200">
-                    <ComboBoxItem Content="切り替えない"/>
-                    <ComboBoxItem Content="確認して切り替え"/>
-                    <ComboBoxItem Content="自動で切り替え"/>
-                </ComboBox>
-            </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="コピーの既定対象:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbCopySource" Width="200">
+                                <ComboBoxItem Content="最後に保存した画像"/>
+                                <ComboBoxItem Content="一時プレビュー"/>
+                            </ComboBox>
+                        </StackPanel>
 
-            <TextBlock Text="アイコン（空欄で既定）:" Margin="0,0,0,5"/>
-            <Grid Margin="0,0,0,15">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="TxtIconPath" Grid.Column="0" VerticalContentAlignment="Center" Padding="5" IsReadOnly="True"/>
-                <Button Grid.Column="1" Content="参照..." Margin="5,0,0,0" Padding="10,0" Click="BtnBrowseIcon_Click"/>
-                <Button Grid.Column="2" Content="クリア" Margin="5,0,0,0" Padding="10,0" Click="BtnClearIcon_Click"/>
-            </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                            <CheckBox x:Name="ChkPlayShutterSound" Style="{StaticResource ToggleSwitch}" Content="シャッター音を鳴らす" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                            <TextBlock Text="音量:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="Gray"/>
+                            <Slider x:Name="SldVolume" Width="100" Minimum="0" Maximum="100" Value="100" TickFrequency="10" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ElementName=SldVolume, Path=Value}" VerticalAlignment="Center" Margin="5,0,0,0" Width="25" TextAlignment="Right"/>
+                            <TextBlock Text="%" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <CheckBox x:Name="ChkPlayShutterSound" Style="{StaticResource ToggleSwitch}" Content="シャッター音を鳴らす" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                <TextBlock Text="音量:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="Gray"/>
-                <Slider x:Name="SldVolume" Width="100" Minimum="0" Maximum="100" Value="100" TickFrequency="10" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding ElementName=SldVolume, Path=Value}" VerticalAlignment="Center" Margin="5,0,0,0" Width="25" TextAlignment="Right"/>
-                <TextBlock Text="%" VerticalAlignment="Center"/>
-            </StackPanel>
+            <!-- ===== 外観タブ ===== -->
+            <TabItem Header="外観">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
+                            <TextBlock Text="テーマ:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbTheme" Width="190">
+                                <ComboBoxItem Content="システム（OSに追従）"/>
+                                <ComboBoxItem Content="ライト"/>
+                                <ComboBoxItem Content="ダーク"/>
+                            </ComboBox>
+                        </StackPanel>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="保存" Width="80" Margin="0,0,10,0" Click="BtnSave_Click"/>
-                <Button Content="キャンセル" Width="80" IsCancel="True"/>
-            </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                            <TextBlock Text="縦モード時のプレビュー位置:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbVerticalSide" Width="120">
+                                <ComboBoxItem Content="右"/>
+                                <ComboBoxItem Content="左"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15" VerticalAlignment="Center">
+                            <TextBlock Text="縦横の自動切替:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbAutoSwitch" Width="200">
+                                <ComboBoxItem Content="切り替えない"/>
+                                <ComboBoxItem Content="確認して切り替え"/>
+                                <ComboBoxItem Content="自動で切り替え"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <TextBlock Text="アイコン（空欄で既定）:" Margin="0,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtIconPath" Grid.Column="0" VerticalContentAlignment="Center" Padding="5" IsReadOnly="True"/>
+                            <Button Grid.Column="1" Content="参照..." Margin="5,0,0,0" Padding="10,0" Click="BtnBrowseIcon_Click"/>
+                            <Button Grid.Column="2" Content="クリア" Margin="5,0,0,0" Padding="10,0" Click="BtnClearIcon_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 開発者タブ ===== 開発者モードON時のみ表示 -->
+            <TabItem x:Name="TabDeveloper" Header="開発者" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkIncludePrereleases" Style="{StaticResource ToggleSwitch}"
+                                  Content="プレリリースも更新対象にする" Margin="0,0,0,12"
+                                  ToolTip="ONで起動時の自動更新チェックとバージョン一覧が prerelease を対象にします。"/>
+
+                        <TextBlock Text="バージョンを選んで変更:" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="CmbVersions" Grid.Column="0"/>
+                            <Button x:Name="BtnReloadVersions" Grid.Column="1" Content="一覧取得" Margin="6,0,0,0"
+                                    Padding="10,0" Click="BtnReloadVersions_Click"/>
+                            <Button x:Name="BtnApplyVersion" Grid.Column="2" Content="適用" Margin="6,0,0,0"
+                                    Padding="10,0" Click="BtnApplyVersion_Click"/>
+                        </Grid>
+
+                        <TextBlock Text="状態:" Margin="0,8,0,4"/>
+                        <TextBlock x:Name="TxtDevStatus" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- 保存・キャンセルはタブ外の下部に固定 -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="保存" Width="80" Margin="0,0,10,0" Click="BtnSave_Click"/>
+            <Button Content="キャンセル" Width="80" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Window>

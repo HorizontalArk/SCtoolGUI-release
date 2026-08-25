@@ -73,6 +73,12 @@ namespace SCtoolGui
 
         /// <summary>縦モード時の操作群カラム幅（スプリッターのドラッグ結果。null なら既定幅）。</summary>
         public double? VerticalOperationsWidth { get; set; } = null;
+
+        /// <summary>開発者モードトグルの状態。マーカー解錠時のみ UI から変更でき、通常は false。</summary>
+        public bool DeveloperModeEnabled { get; set; } = false;
+
+        /// <summary>更新チェックとバージョン一覧で prerelease を対象にするか。開発者モード用。</summary>
+        public bool IncludePrereleases { get; set; } = false;
     }
 
     public class SettingsManager
@@ -80,6 +86,10 @@ namespace SCtoolGui
         private readonly string _settingsFile = ResolveSettingsFile(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             AppDomain.CurrentDomain.BaseDirectory);
+
+        /// <summary>開発者モードのマーカーファイル(developer.key)のパスを解決する。</summary>
+        public static string ResolveDeveloperKeyPath(string appDataRoot)
+            => Path.Combine(appDataRoot, "SCtoolGui", "developer.key");
 
         /// <summary>
         /// 設定ファイルの保存先を決める。Velopackはバージョンごとに別フォルダへ

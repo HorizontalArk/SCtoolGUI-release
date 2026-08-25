@@ -39,6 +39,7 @@
     <Compile Include="..\CaptureFileName.cs" Link="Source\CaptureFileName.cs" />
     <Compile Include="..\LogFormatter.cs" Link="Source\LogFormatter.cs" />
     <Compile Include="..\CopyTargetResolver.cs" Link="Source\CopyTargetResolver.cs" />
+    <Compile Include="..\DeveloperModeGate.cs" Link="Source\DeveloperModeGate.cs" />
   </ItemGroup>
 
 </Project>
