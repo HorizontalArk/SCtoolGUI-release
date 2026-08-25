@@ -29,7 +29,10 @@ namespace SCtoolGui
         public bool ResultUseWindowTitleForFileName { get; private set; }
         public string ResultCopySource { get; private set; } = "LastSaved";
 
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource)
+        public bool ResultDeveloperModeEnabled { get; private set; }
+        public bool ResultIncludePrereleases { get; private set; }
+
+        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource, bool developerUnlocked, bool developerModeEnabled, bool includePrereleases)
         {
             InitializeComponent();
             TxtSaveDir.Text = saveDir;
@@ -73,6 +76,54 @@ namespace SCtoolGui
 
             ChkUseWindowTitleForFileName.IsChecked = useWindowTitleForFileName;
             CmbCopySource.SelectedIndex = copySource == "TempPreview" ? 1 : 0;
+
+            // マーカー解錠時のみ開発者モードトグルを出す。未解錠なら一切出さない。
+            ChkDeveloperMode.Visibility = developerUnlocked ? Visibility.Visible : Visibility.Collapsed;
+            ChkDeveloperMode.IsChecked = developerUnlocked && developerModeEnabled;
+            ChkIncludePrereleases.IsChecked = includePrereleases;
+            UpdateDeveloperTabVisibility();
+            UpdateDevStatus();
+        }
+
+        private void ChkDeveloperMode_Changed(object sender, RoutedEventArgs e)
+            => UpdateDeveloperTabVisibility();
+
+        /// <summary>開発者タブは、トグルが表示済み(=解錠)かつ ON のときだけ表示する。</summary>
+        private void UpdateDeveloperTabVisibility()
+        {
+            bool show = ChkDeveloperMode.Visibility == Visibility.Visible
+                        && ChkDeveloperMode.IsChecked == true;
+            if (TabDeveloper != null)
+                TabDeveloper.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private string? _devStatusText;
+        private void UpdateDevStatus()
+            => TxtDevStatus.Text = _devStatusText ?? "（情報なし）";
+
+        /// <summary>MainWindow から現在バージョン等の状態文言を渡す。</summary>
+        public void SetDeveloperStatus(string text) { _devStatusText = text; UpdateDevStatus(); }
+
+        // バージョン一覧・適用は MainWindow 側のサービスに委譲するため、コールバックで橋渡しする。
+        public System.Func<System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string>>>? LoadVersions;
+        public System.Func<string, System.Threading.Tasks.Task>? ApplyVersion;
+
+        private async void BtnReloadVersions_Click(object sender, RoutedEventArgs e)
+        {
+            if (LoadVersions == null) return;
+            CmbVersions.ItemsSource = null;
+            var list = await LoadVersions();
+            CmbVersions.ItemsSource = list;
+            if (list.Count > 0) CmbVersions.SelectedIndex = 0;
+        }
+
+        private async void BtnApplyVersion_Click(object sender, RoutedEventArgs e)
+        {
+            if (ApplyVersion == null || CmbVersions.SelectedItem is not string ver) return;
+            var ok = MessageBox.Show($"バージョン {ver} へ変更して再起動します。よろしいですか？",
+                "バージョン変更", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (ok != MessageBoxResult.Yes) return;
+            await ApplyVersion(ver);
         }
 
         private void BtnBrowseIcon_Click(object sender, RoutedEventArgs e)
@@ -154,6 +205,9 @@ namespace SCtoolGui
 
             ResultUseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
             ResultCopySource = CmbCopySource.SelectedIndex == 1 ? "TempPreview" : "LastSaved";
+
+            ResultDeveloperModeEnabled = ChkDeveloperMode.IsChecked == true;
+            ResultIncludePrereleases = ChkIncludePrereleases.IsChecked == true;
 
             this.DialogResult = true;
         }

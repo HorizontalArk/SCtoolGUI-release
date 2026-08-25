@@ -460,6 +460,17 @@ namespace SCtoolGui
         {
             bool wasAlwaysAdmin = _settingsManager.Current.AlwaysRunAsAdmin;
 
+            // 開発者モードのマーカー(developer.key)を読み、解錠されているか判定する。
+            string? devKey = null;
+            try
+            {
+                string keyPath = SettingsManager.ResolveDeveloperKeyPath(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+                if (File.Exists(keyPath)) devKey = File.ReadAllText(keyPath);
+            }
+            catch { }
+            bool developerUnlocked = DeveloperModeGate.IsUnlocked(devKey);
+
             // ★引数に _settingsManager.Current.ShutterVolume を追加
             var settingsWin = new SettingsWindow(
                 _settingsManager.Current.SaveDirectory,
@@ -477,8 +488,33 @@ namespace SCtoolGui
                 _settingsManager.Current.VerticalPreviewSide,
                 _settingsManager.Current.PreviewAutoSwitch,
                 _settingsManager.Current.UseWindowTitleForFileName,
-                _settingsManager.Current.CopySource) { Owner = this };
-            
+                _settingsManager.Current.CopySource,
+                developerUnlocked,
+                _settingsManager.Current.DeveloperModeEnabled,
+                _settingsManager.Current.IncludePrereleases) { Owner = this };
+
+            // 開発者タブの状態表示とバージョン一覧・適用のコールバックを配線する。
+            settingsWin.SetDeveloperStatus(
+                $"現在バージョン: {_updateService.CurrentVersion ?? "(dev)"}\n" +
+                $"インストール版: {_updateService.IsInstalled}\n" +
+                $"設定ファイル: {SettingsManager.ResolveDeveloperKeyPath(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))}");
+            settingsWin.LoadVersions = async () =>
+            {
+                var assets = await _updateService.GetAvailableReleasesAsync();
+                // 1バージョンにつきフル/デルタ等 複数アセットが返るため、バージョン番号で重複を除く。
+                return (System.Collections.Generic.IReadOnlyList<string>)assets
+                    .Select(a => a.Version?.ToString() ?? "")
+                    .Where(v => v.Length > 0)
+                    .Distinct()
+                    .ToList();
+            };
+            settingsWin.ApplyVersion = async (ver) =>
+            {
+                var assets = await _updateService.GetAvailableReleasesAsync();
+                var target = assets.FirstOrDefault(a => (a.Version?.ToString() ?? "") == ver);
+                if (target != null) await _updateService.DownloadAndApplyAssetAsync(target);
+            };
+
             if (settingsWin.ShowDialog() == true) {
                 _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
                 _settingsManager.Current.HotkeyModifiers = settingsWin.ResultModifiers;
@@ -507,6 +543,9 @@ namespace SCtoolGui
 
                 _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
                 _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
+
+                _settingsManager.Current.DeveloperModeEnabled = settingsWin.ResultDeveloperModeEnabled;
+                _settingsManager.Current.IncludePrereleases = settingsWin.ResultIncludePrereleases;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
                 if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 

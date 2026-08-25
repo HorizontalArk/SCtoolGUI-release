@@ -81,6 +81,13 @@
 
                         <CheckBox x:Name="ChkAlwaysRunAsAdmin" Style="{StaticResource ToggleSwitch}" Content="常に管理者として起動する" Margin="0,0,0,10"
                                   ToolTip="管理者権限で動くアプリを常用する場合に有効にします。"/>
+
+                        <!-- 開発者モードトグル。マーカーファイル(developer.key)解錠時のみ表示する。
+                             ON にすると「開発者」タブが出現する。未解錠なら一切表示しない。 -->
+                        <CheckBox x:Name="ChkDeveloperMode" Style="{StaticResource ToggleSwitch}"
+                                  Content="開発者モード" Margin="0,10,0,0" Visibility="Collapsed"
+                                  Checked="ChkDeveloperMode_Changed" Unchecked="ChkDeveloperMode_Changed"
+                                  ToolTip="プレリリースの取り込みや任意バージョンへの変更を有効にします。"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -156,6 +163,35 @@
                             <Button Grid.Column="1" Content="参照..." Margin="5,0,0,0" Padding="10,0" Click="BtnBrowseIcon_Click"/>
                             <Button Grid.Column="2" Content="クリア" Margin="5,0,0,0" Padding="10,0" Click="BtnClearIcon_Click"/>
                         </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ===== 開発者タブ ===== 開発者モードON時のみ表示 -->
+            <TabItem x:Name="TabDeveloper" Header="開発者" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4,8,8,4">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkIncludePrereleases" Style="{StaticResource ToggleSwitch}"
+                                  Content="プレリリースも更新対象にする" Margin="0,0,0,12"
+                                  ToolTip="ONで起動時の自動更新チェックとバージョン一覧が prerelease を対象にします。"/>
+
+                        <TextBlock Text="バージョンを選んで変更:" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="CmbVersions" Grid.Column="0"/>
+                            <Button x:Name="BtnReloadVersions" Grid.Column="1" Content="一覧取得" Margin="6,0,0,0"
+                                    Padding="10,0" Click="BtnReloadVersions_Click"/>
+                            <Button x:Name="BtnApplyVersion" Grid.Column="2" Content="適用" Margin="6,0,0,0"
+                                    Padding="10,0" Click="BtnApplyVersion_Click"/>
+                        </Grid>
+
+                        <TextBlock Text="状態:" Margin="0,8,0,4"/>
+                        <TextBlock x:Name="TxtDevStatus" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
