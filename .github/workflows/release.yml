@@ -1,6 +1,10 @@
 # v* タグを push すると、Velopack でインストーラ一式を作って Release に公開する。
 name: Release
 
+# Actions 一覧の実行名を分かりやすくする（例: Release v1.0.15-pre）。
+# 軽量タグだと既定の実行名がそっけないため run-name で明示する。
+run-name: Release ${{ github.ref_name }}
+
 on:
   push:
     tags:
