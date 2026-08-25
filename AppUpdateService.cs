@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Velopack;
 using Velopack.Sources;
@@ -11,11 +12,17 @@ namespace SCtoolGui
         private const string ReleasesRepoUrl = "https://github.com/HorizontalArk/SCtoolGUI-release";
         // 旧 git 版の SCtoolGui.UpdateManager と名前が衝突するため Velopack 側を明示修飾する。
         private readonly Velopack.UpdateManager _mgr;
+        private readonly GithubSource _source;
 
-        public AppUpdateService()
+        /// <param name="includePrereleases">
+        /// true なら prerelease も更新対象・一覧対象にする（開発者モード用）。既定 false。
+        /// </param>
+        public AppUpdateService(bool includePrereleases = false)
         {
-            // prerelease は取り込まない（第3引数 false）。公開repoなのでトークン不要（null）。
-            _mgr = new Velopack.UpdateManager(new GithubSource(ReleasesRepoUrl, null, false));
+            // 公開repoなのでトークン不要（null）。prerelease 取り込みは設定で切り替える。
+            _source = new GithubSource(ReleasesRepoUrl, null, includePrereleases);
+            // 任意バージョンへの変更（ダウングレード）を許可する。通常更新には影響しない。
+            _mgr = new Velopack.UpdateManager(_source, new UpdateOptions { AllowVersionDowngrade = true });
         }
 
         /// <summary>Velopack でインストールされた状態か。dev 実行時は false。</summary>
@@ -33,6 +40,40 @@ namespace SCtoolGui
         /// </summary>
         public async Task DownloadAndApplyAsync(UpdateInfo info, Action<int>? onProgress = null)
         {
+            await _mgr.DownloadUpdatesAsync(info, onProgress);
+            _mgr.ApplyUpdatesAndRestart(info);
+        }
+
+        /// <summary>
+        /// 利用可能なリリース一覧（prerelease 取り込み設定に従う）を返す。取得失敗時は空。
+        /// バージョン変更（更新/ダウングレード）の選択肢として使う。
+        /// </summary>
+        public async Task<IReadOnlyList<VelopackAsset>> GetAvailableReleasesAsync()
+        {
+            try
+            {
+                // channel=null で OS 既定チャンネル。stagingId=null、latestLocalRelease=null。
+                var feed = await _source.GetReleaseFeed(
+                    logger: null!, appId: null!, channel: null!, stagingId: null, latestLocalRelease: null!);
+                return (IReadOnlyList<VelopackAsset>?)feed?.Assets ?? Array.Empty<VelopackAsset>();
+            }
+            catch
+            {
+                return Array.Empty<VelopackAsset>();
+            }
+        }
+
+        /// <summary>
+        /// 指定した版へ更新/ダウングレードして再起動する。成功時はこの呼び出しからは戻らない。
+        /// ダウングレードは UpdateManager の AllowVersionDowngrade で許可済み。
+        /// </summary>
+        public async Task DownloadAndApplyAssetAsync(VelopackAsset asset, Action<int>? onProgress = null)
+        {
+            // 対象が現在より低ければダウングレード。UpdateInfo(target, isDowngrade, baseRelease, deltas)。
+            bool isDowngrade = _mgr.CurrentVersion != null
+                && asset.Version != null
+                && asset.Version < _mgr.CurrentVersion;
+            var info = new UpdateInfo(asset, isDowngrade, null!, Array.Empty<VelopackAsset>());
             await _mgr.DownloadUpdatesAsync(info, onProgress);
             _mgr.ApplyUpdatesAndRestart(info);
         }

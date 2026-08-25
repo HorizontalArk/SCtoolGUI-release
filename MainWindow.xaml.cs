@@ -13,7 +13,8 @@ namespace SCtoolGui
     {
         private SettingsManager _settingsManager = new SettingsManager();
         private DispatcherTimer _statusTimer = new DispatcherTimer();
-        private readonly AppUpdateService _updateService = new AppUpdateService();
+        // 設定(IncludePrereleases)を反映して生成するため、コンストラクタで設定読込後に初期化する。
+        private AppUpdateService _updateService = null!;
         private UpdateInfo? _pendingUpdate;
 
         /// <summary>アップデート適用中（DL〜再起動待ち）。この間は撮影など主要操作を抑止する。</summary>
@@ -26,6 +27,8 @@ namespace SCtoolGui
         {
             InitializeComponent();
             _settingsManager.Load();
+            // prerelease 取り込み設定を反映して更新サービスを生成する（開発者モード用）。
+            _updateService = new AppUpdateService(_settingsManager.Current.IncludePrereleases);
             ThemeManager.Apply(_settingsManager.Current.Theme);
             ApplyWindowIcon();
 
