@@ -88,7 +88,10 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Style="{StaticResource Icon}" Text="&#xE946;" Margin="0,0,10,0"
                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-                <TextBlock Grid.Column="1" Text="新しいアップデートがあります。" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" TextWrapping="Wrap">
+                    <Run x:Name="RunUpdateAvailable" Text="新しいアップデートがあります。"/>
+                    <Hyperlink x:Name="HlnkUpdateDetails" Click="HlnkUpdateDetails_Click">アップデートの詳細はこちら</Hyperlink>
+                </TextBlock>
                 <Button x:Name="BtnUpdate" Grid.Column="2" Content="更新して再起動" Padding="14,6" FontWeight="SemiBold"
                         Background="{DynamicResource AccentFillColorDefaultBrush}"
                         Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"

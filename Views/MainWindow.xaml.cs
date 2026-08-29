@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Threading;
 using Velopack;
 
@@ -622,12 +623,17 @@ namespace SCtoolGui
                 _pendingUpdate = found;
                 if (_pendingUpdate != null)
                 {
+                    string version = _pendingUpdate.TargetFullRelease.Version?.ToString() ?? "?";
+                    RunUpdateAvailable.Text = $"新しいアップデート(v{version})があります。";
+                    HlnkUpdateDetails.NavigateUri =
+                        new Uri(ReleaseLinks.ReleasePageUrl(AppUpdateService.ReleasesRepoUrl, version));
+
                     UpdateBanner.Visibility = Visibility.Visible;
-                    Log(LogMessages.UpdateAvailable);
+                    Log(LogMessages.UpdateAvailable(version));
                 }
                 else
                 {
-                    Log(LogMessages.UpdateUpToDate);
+                    Log(LogMessages.UpdateUpToDate(_updateService.CurrentVersion ?? "(dev)"));
                 }
             }
             catch
@@ -635,6 +641,14 @@ namespace SCtoolGui
                 // ネットワーク不通などは黙って諦める（起動を妨げない）。
                 Log(LogMessages.UpdateCheckFailed);
             }
+        }
+
+        /// <summary>アップデート通知内の「詳細はこちら」リンク。既定ブラウザでGitHub Releaseページを開く。</summary>
+        private void HlnkUpdateDetails_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Hyperlink { NavigateUri: Uri uri }) return;
+            try { Process.Start(new ProcessStartInfo(uri.ToString()) { UseShellExecute = true }); }
+            catch { }
         }
 
         private async void BtnUpdate_Click(object sender, RoutedEventArgs e)

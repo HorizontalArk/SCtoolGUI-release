@@ -46,6 +46,7 @@
     <Compile Include="..\Logic\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
     <Compile Include="..\Logic\CaptureCropCalculator.cs" Link="Source\CaptureCropCalculator.cs" />
     <Compile Include="..\Logic\HotKeyDisplay.cs" Link="Source\HotKeyDisplay.cs" />
+    <Compile Include="..\Logic\ReleaseLinks.cs" Link="Source\ReleaseLinks.cs" />
   </ItemGroup>
 
 </Project>
