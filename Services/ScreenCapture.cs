@@ -13,24 +13,6 @@ namespace SCtoolGui
     {
         [DllImport("dwmapi.dll")]
         private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
-        
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hwnd);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        [DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-        [DllImport("user32.dll")]
-        private static extern bool BringWindowToTop(IntPtr hWnd);
 
         public struct RECT { public int Left, Top, Right, Bottom; }
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
@@ -57,38 +39,17 @@ namespace SCtoolGui
         /// <returns>前面にできた場合は true。時間内に前面にならなければ false。</returns>
         private static bool TryBringToForeground(IntPtr hwnd)
         {
-            if (GetForegroundWindow() == hwnd) return true;
+            if (ForegroundWindowHelper.GetForeground() == hwnd) return true;
 
-            // SetForegroundWindow は、直前に別アプリがフォアグラウンドを握っている状態では
-            // OS のフォアグラウンドロックにより無視される。そこで現在の前面スレッドへ一時的に
-            // AttachThreadInput してから前面化することで、確実に対象を前面へ出す。
-            // （自ウィンドウ復帰の BringToolToForeground と同じ手法）
-            IntPtr fg = GetForegroundWindow();
-            uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
-            uint thisThread = GetCurrentThreadId();
-
-            bool attached = false;
-            try
-            {
-                if (fgThread != thisThread && fgThread != 0)
-                {
-                    attached = AttachThreadInput(thisThread, fgThread, true);
-                }
-
-                // 最大化状態を通常サイズへ戻してしまわないよう ShowWindow(SW_RESTORE) は使わない。
-                BringWindowToTop(hwnd);
-                SetForegroundWindow(hwnd);
-            }
-            finally
-            {
-                if (attached) AttachThreadInput(thisThread, fgThread, false);
-            }
+            // 最大化状態を通常サイズへ戻してしまわないよう ShowWindow(SW_RESTORE) は使わない。
+            // （自ウィンドウ復帰の BringToolToForeground と同じ手法。ForegroundWindowHelperに共通化してある）
+            ForegroundWindowHelper.TryForegroundOnce(hwnd);
 
             // 固定待ちではなく実際に前面になるまで待つ。多くの場合250msより短く済む。
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < ForegroundTimeoutMs)
             {
-                if (GetForegroundWindow() == hwnd)
+                if (ForegroundWindowHelper.GetForeground() == hwnd)
                 {
                     System.Threading.Thread.Sleep(PostForegroundSettleMs);
                     return true;
@@ -96,7 +57,7 @@ namespace SCtoolGui
                 System.Threading.Thread.Sleep(ForegroundPollIntervalMs);
             }
 
-            return GetForegroundWindow() == hwnd;
+            return ForegroundWindowHelper.GetForeground() == hwnd;
         }
 
         /// <summary>ウィンドウの外枠（DWMの拡張フレーム境界）を取得する。</summary>

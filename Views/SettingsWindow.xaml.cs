@@ -34,9 +34,7 @@ namespace SCtoolGui
             for (int i = 1; i <= 12; i++) keys.Add($"F{i}");
             CmbKey.ItemsSource = keys;
 
-            uint key = settings.HotkeyKey;
-            string currentKeyStr = (key >= 0x70 && key <= 0x7B) ? $"F{key - 0x70 + 1}" : ((char)key).ToString();
-            CmbKey.SelectedItem = currentKeyStr;
+            CmbKey.SelectedItem = HotKeyDisplay.KeyText(settings.HotkeyKey);
 
             ChkAppTopmost.IsChecked = settings.AppTopmost;
             ChkSaveInWindowFolder.IsChecked = settings.SaveInWindowNameFolder;
