@@ -101,3 +101,13 @@ jobs:
           --releaseName ${{ github.ref_name }}
           --pre
           --publish
+
+      # vpk upload github は既知のパッケージ資産だけを対象にするため、手動ダウンロード用の
+      # バージョン入りSetup.exeコピーは公開済みリリースへ追加の資産として個別にアップロードする。
+      - name: バージョン入りSetup.exeを追加の資産としてアップロード
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release upload ${{ github.ref_name }}
+          "Releases\SCtoolGui-win-Setup-${{ steps.ver.outputs.version }}.exe"
+          --repo HorizontalArk/SCtoolGUI-release
