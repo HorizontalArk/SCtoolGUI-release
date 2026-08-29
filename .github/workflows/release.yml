@@ -69,6 +69,15 @@ jobs:
           --packTitle SCtoolGui
           --shortcuts None
 
+      # Setup.exe自体は自動更新フィードが参照する固定名(SCtoolGui-win-Setup.exe)のままにし、
+      # 手動ダウンロード用にバージョン入りの名前でコピーを追加する（Releaseの資産一覧に並ぶだけ）。
+      - name: バージョン入りのSetup.exeコピーを追加
+        shell: pwsh
+        run: >
+          Copy-Item
+          "Releases\SCtoolGui-win-Setup.exe"
+          "Releases\SCtoolGui-win-Setup-${{ steps.ver.outputs.version }}.exe"
+
       # 通常リリース（タグに '-' なし）。全ユーザーの自動更新に配信される。
       - name: GitHub Release へ公開（通常）
         if: steps.ver.outputs.is_prerelease == 'false'
