@@ -5,25 +5,27 @@ namespace SCtoolGui.Tests
 {
     public class DeveloperModeGateTests
     {
-        // DeveloperModeGate の ExpectedHashHex と同一の合言葉を使う。
-        private const string Passphrase = "SCtoolGui-dev-3f9c1a7e5b2d48e6a0c9f14b7d8e2a65";
+        // テスト専用の合言葉。本番の合言葉(DeveloperModeGate.ExpectedHashHexの元)とは無関係で、
+        // このリポジトリには本番の合言葉を一切書かない。
+        private const string TestPassphrase = "test-only-passphrase-unrelated-to-production";
+        private static readonly string TestHash = DeveloperModeGate.Sha256Hex(TestPassphrase);
 
         [Fact]
         public void 正しい合言葉で解錠される()
         {
-            Assert.True(DeveloperModeGate.IsUnlocked(Passphrase));
+            Assert.True(DeveloperModeGate.IsUnlocked(TestPassphrase, TestHash));
         }
 
         [Fact]
         public void 前後の空白は無視して解錠される()
         {
-            Assert.True(DeveloperModeGate.IsUnlocked("  " + Passphrase + "\r\n"));
+            Assert.True(DeveloperModeGate.IsUnlocked("  " + TestPassphrase + "\r\n", TestHash));
         }
 
         [Fact]
         public void 誤った合言葉では解錠されない()
         {
-            Assert.False(DeveloperModeGate.IsUnlocked("wrong"));
+            Assert.False(DeveloperModeGate.IsUnlocked("wrong", TestHash));
         }
 
         [Theory]

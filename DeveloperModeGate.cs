@@ -12,17 +12,20 @@ namespace SCtoolGui
     /// </summary>
     public static class DeveloperModeGate
     {
-        // 合言葉 "SCtoolGui-dev-3f9c1a7e5b2d48e6a0c9f14b7d8e2a65" の SHA256(16進小文字)。
-        // 合言葉の平文は置かない。developer.key にこの合言葉を書くと解錠される。
+        // 合言葉のSHA256(16進小文字)。合言葉の平文はコードに一切置かない(developer.keyにのみ持つ)。
         private const string ExpectedHashHex =
-            "58146eb7ea8fe9429cca1ca42a564920d597e984466446762ba369e97c02656d";
+            "e105da4e2663a77638c92dd3838a8b9faf7d4f86d364844ee2dc9889d62aaeb2";
 
         /// <summary>ファイル中身のハッシュが埋め込み値と一致すれば true。null/空/不一致は false。</summary>
         public static bool IsUnlocked(string? fileContent)
+            => IsUnlocked(fileContent, ExpectedHashHex);
+
+        /// <summary>期待ハッシュを外部から指定できるオーバーロード(テスト用)。</summary>
+        public static bool IsUnlocked(string? fileContent, string expectedHashHex)
         {
             if (string.IsNullOrWhiteSpace(fileContent)) return false;
             string hex = Sha256Hex(fileContent.Trim());
-            return string.Equals(hex, ExpectedHashHex, StringComparison.OrdinalIgnoreCase);
+            return string.Equals(hex, expectedHashHex, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>文字列の SHA256 を 16進小文字で返す。</summary>
