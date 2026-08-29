@@ -612,7 +612,14 @@ namespace SCtoolGui
             Log(LogMessages.UpdateChecking);
             try
             {
-                _pendingUpdate = await _updateService.CheckAsync();
+                var found = await _updateService.CheckAsync();
+
+                // ダウングレード(例: プレリリース実行中にプレリリース対象をOFFにすると、
+                // 直近の安定版が「より古いバージョン」として見つかる)は自動更新バナーの対象外にする。
+                // 意図的なバージョン変更は「開発者」タブの「バージョンを選んで変更」で行う。
+                if (found != null && found.IsDowngrade) found = null;
+
+                _pendingUpdate = found;
                 if (_pendingUpdate != null)
                 {
                     UpdateBanner.Visibility = Visibility.Visible;
