@@ -245,5 +245,15 @@ namespace SCtoolGui.Tests
 
             Assert.False(result.IsMatched);
         }
+
+        [Theory]
+        [InlineData("SCtool", true)]
+        [InlineData("詳細設定", true)]
+        [InlineData("普通のアプリ", false)]
+        [InlineData("", false)]
+        public void 自アプリのウィンドウタイトルを判定する(string title, bool expected)
+        {
+            Assert.Equal(expected, WindowMatcher.IsOwnAppWindowTitle(title));
+        }
     }
 }
