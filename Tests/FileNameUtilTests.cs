@@ -35,5 +35,16 @@ namespace SCtoolGui.Tests
         {
             Assert.Equal("gakumas", FileNameUtil.ToSafeName("gakumas"));
         }
+
+        [Theory]
+        [InlineData("gakumas", true)]
+        [InlineData("a/b", false)]
+        [InlineData("a:b", false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        public void IsValidFolderNameは無効文字と空文字を弾く(string name, bool expected)
+        {
+            Assert.Equal(expected, FileNameUtil.IsValidFolderName(name));
+        }
     }
 }

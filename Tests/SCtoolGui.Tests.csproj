@@ -44,6 +44,7 @@
     <Compile Include="..\Logic\FocusRestoreLogic.cs" Link="Source\FocusRestoreLogic.cs" />
     <Compile Include="..\Logic\UpdateFlow.cs" Link="Source\UpdateFlow.cs" />
     <Compile Include="..\Logic\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
+    <Compile Include="..\Logic\CaptureCropCalculator.cs" Link="Source\CaptureCropCalculator.cs" />
   </ItemGroup>
 
 </Project>
