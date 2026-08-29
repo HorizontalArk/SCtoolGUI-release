@@ -9,7 +9,7 @@ namespace SCtoolGui
 {
     public static class WindowManager
     {
-        // ★修正: SetLastError = true を追加し、OSからエラーコードを受け取れるようにする
+        // SetLastError = true にして、OSからエラーコードを受け取れるようにする
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
         
@@ -68,7 +68,7 @@ namespace SCtoolGui
                         GetWindowText(hWnd, builder, builder.Capacity);
                         string title = builder.ToString();
 
-                        if (!string.IsNullOrEmpty(title) && title != "SCtool" && title != "詳細設定")
+                        if (!string.IsNullOrEmpty(title) && !WindowMatcher.IsOwnAppWindowTitle(title))
                         {
                             string exePath = GetExecutablePath(hWnd);
                             windows.Add(new WindowItem
@@ -87,7 +87,7 @@ namespace SCtoolGui
             return windows;
         }
 
-        // ★修正: void から bool に変更し、命令がOSに通ったかどうかを返すようにする
+        /// <summary>命令がOSに通ったかどうかを返す。</summary>
         public static bool SetAlwaysOnTop(IntPtr handle, bool isTopmost)
         {
             if (handle == IntPtr.Zero) return false;

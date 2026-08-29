@@ -38,11 +38,8 @@ namespace SCtoolGui
         /// 更新をDLして適用し、アプリを再起動する。成功時はこの呼び出しからは戻らない。
         /// <paramref name="onProgress"/> にはDLの進捗(0〜100)が渡る。
         /// </summary>
-        public async Task DownloadAndApplyAsync(UpdateInfo info, Action<int>? onProgress = null)
-        {
-            await _mgr.DownloadUpdatesAsync(info, onProgress);
-            _mgr.ApplyUpdatesAndRestart(info);
-        }
+        public Task DownloadAndApplyAsync(UpdateInfo info, Action<int>? onProgress = null)
+            => DownloadAndApply(info, onProgress);
 
         /// <summary>
         /// 利用可能なリリース一覧（prerelease 取り込み設定に従う）を返す。取得失敗時は空。
@@ -67,13 +64,19 @@ namespace SCtoolGui
         /// 指定した版へ更新/ダウングレードして再起動する。成功時はこの呼び出しからは戻らない。
         /// ダウングレードは UpdateManager の AllowVersionDowngrade で許可済み。
         /// </summary>
-        public async Task DownloadAndApplyAssetAsync(VelopackAsset asset, Action<int>? onProgress = null)
+        public Task DownloadAndApplyAssetAsync(VelopackAsset asset, Action<int>? onProgress = null)
         {
             // 対象が現在より低ければダウングレード。UpdateInfo(target, isDowngrade, baseRelease, deltas)。
             bool isDowngrade = _mgr.CurrentVersion != null
                 && asset.Version != null
                 && asset.Version < _mgr.CurrentVersion;
             var info = new UpdateInfo(asset, isDowngrade, null!, Array.Empty<VelopackAsset>());
+            return DownloadAndApply(info, onProgress);
+        }
+
+        /// <summary>DL・適用の実処理。上の2つの公開メソッドで共有する。</summary>
+        private async Task DownloadAndApply(UpdateInfo info, Action<int>? onProgress)
+        {
             await _mgr.DownloadUpdatesAsync(info, onProgress);
             _mgr.ApplyUpdatesAndRestart(info);
         }

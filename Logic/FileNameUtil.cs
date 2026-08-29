@@ -34,5 +34,12 @@ namespace SCtoolGui
 
             return s.Length == 0 ? "Unknown" : s;
         }
+
+        /// <summary>フォルダ名として使える文字だけで構成されているか。空・空白のみは不可。</summary>
+        public static bool IsValidFolderName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return false;
+            return name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+        }
     }
 }
