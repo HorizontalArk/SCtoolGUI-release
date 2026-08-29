@@ -35,10 +35,6 @@ namespace SCtoolGui
         public struct RECT { public int Left, Top, Right, Bottom; }
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
 
-        // ★追加: Windowsのシステム枠（アクセントカラー枠）を除外するためのカット量(px)
-        // 上下左右からこのピクセル分だけ内側をキャプチャします。
-        private const int SYSTEM_BORDER_CUT = 1;
-
         /// <summary>対象が前面に来るのを待つ最大時間(ms)。これを超えたら撮影を中止する。</summary>
         private const int ForegroundTimeoutMs = 1000;
 
@@ -152,29 +148,23 @@ namespace SCtoolGui
 
             RECT rect = GetWindowBounds(hwnd);
 
-            int originalWidth = rect.Right - rect.Left;
-            int originalHeight = rect.Bottom - rect.Top;
+            // 左右・上下からシステム枠分を削った実際のキャプチャサイズを計算する
+            var crop = CaptureCropCalculator.Compute(rect.Left, rect.Top, rect.Right, rect.Bottom, topCutPixels);
+            if (!crop.IsValid) throw new Exception("ウィンドウサイズが正しく取得できません、またはカット後のサイズが不正です。");
 
-            // ★修正: 左右・上下からシステム枠分を削った実際のキャプチャサイズを計算
-            int captureWidth = originalWidth - (SYSTEM_BORDER_CUT * 2);
-            int captureHeight = originalHeight - (SYSTEM_BORDER_CUT * 2);
-
-            int finalHeight = captureHeight - topCutPixels;
-
-            if (captureWidth <= 0 || finalHeight <= 0) throw new Exception("ウィンドウサイズが正しく取得できません、またはカット後のサイズが不正です。");
-
-            using (Bitmap fullBmp = new Bitmap(captureWidth, captureHeight))
+            using (Bitmap fullBmp = new Bitmap(crop.CaptureWidth, crop.CaptureHeight))
             using (Graphics g = Graphics.FromImage(fullBmp))
             {
-                // ★修正: 座標をシステム枠分（1px）内側にずらして画面をコピーする
-                g.CopyFromScreen(rect.Left + SYSTEM_BORDER_CUT, rect.Top + SYSTEM_BORDER_CUT, 0, 0, new Size(captureWidth, captureHeight), CopyPixelOperation.SourceCopy);
-                
+                // 座標をシステム枠分だけ内側にずらして画面をコピーする
+                int cut = CaptureCropCalculator.SystemBorderCut;
+                g.CopyFromScreen(rect.Left + cut, rect.Top + cut, 0, 0, new Size(crop.CaptureWidth, crop.CaptureHeight), CopyPixelOperation.SourceCopy);
+
                 SaveJpeg(fullBmp, previewPath);
 
-                using (Bitmap cutBmp = new Bitmap(captureWidth, finalHeight))
+                using (Bitmap cutBmp = new Bitmap(crop.CaptureWidth, crop.FinalHeight))
                 using (Graphics gCut = Graphics.FromImage(cutBmp))
                 {
-                    gCut.DrawImage(fullBmp, new Rectangle(0, 0, captureWidth, finalHeight), new Rectangle(0, topCutPixels, captureWidth, finalHeight), GraphicsUnit.Pixel);
+                    gCut.DrawImage(fullBmp, new Rectangle(0, 0, crop.CaptureWidth, crop.FinalHeight), new Rectangle(0, topCutPixels, crop.CaptureWidth, crop.FinalHeight), GraphicsUnit.Pixel);
                     AddExifData(cutBmp);
                     SaveJpeg(cutBmp, savePath);
                 }
@@ -190,20 +180,15 @@ namespace SCtoolGui
 
                 RECT rect = GetWindowBounds(hwnd);
 
-                int originalWidth = rect.Right - rect.Left;
-                int originalHeight = rect.Bottom - rect.Top;
+                // 一時プレビュー用のキャプチャでも同様に枠を削る(トップカットは適用しない)
+                var crop = CaptureCropCalculator.Compute(rect.Left, rect.Top, rect.Right, rect.Bottom, topCutPixels: 0);
+                if (!crop.IsValid) return false;
 
-                // ★修正: 一時プレビュー用のキャプチャでも同様に枠を削る
-                int captureWidth = originalWidth - (SYSTEM_BORDER_CUT * 2);
-                int captureHeight = originalHeight - (SYSTEM_BORDER_CUT * 2);
-
-                if (captureWidth <= 0 || captureHeight <= 0) return false;
-
-                using (Bitmap fullBmp = new Bitmap(captureWidth, captureHeight))
+                using (Bitmap fullBmp = new Bitmap(crop.CaptureWidth, crop.CaptureHeight))
                 using (Graphics g = Graphics.FromImage(fullBmp))
                 {
-                    // ★修正: こちらも座標をずらす
-                    g.CopyFromScreen(rect.Left + SYSTEM_BORDER_CUT, rect.Top + SYSTEM_BORDER_CUT, 0, 0, new Size(captureWidth, captureHeight), CopyPixelOperation.SourceCopy);
+                    int cut = CaptureCropCalculator.SystemBorderCut;
+                    g.CopyFromScreen(rect.Left + cut, rect.Top + cut, 0, 0, new Size(crop.CaptureWidth, crop.CaptureHeight), CopyPixelOperation.SourceCopy);
                     SaveJpeg(fullBmp, previewPath);
                 }
                 return true;
