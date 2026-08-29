@@ -191,25 +191,10 @@ namespace SCtoolGui
             base.OnClosed(e);
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool BringWindowToTop(IntPtr hWnd);
-
         /// <summary>
         /// 撮影のため対象を前面化した後、ツール自身を前面へ戻す。
-        ///
-        /// SetForegroundWindow は、直前に別アプリがフォアグラウンドを取った状態では
-        /// OS のフォアグラウンドロックにより無視される。そこで前面スレッドへ一時的に
-        /// AttachThreadInput してから前面化することで、確実にツールを前面へ戻す。
+        /// SetForegroundWindow のフォアグラウンドロック回避手法は ForegroundWindowHelper に
+        /// 共通化してある(ScreenCapture の対象ウィンドウ前面化と同じ手法)。
         ///
         /// なお対象が管理者権限ウィンドウで SCtool が非管理者の場合、UIPI により
         /// AttachThreadInput/SetForegroundWindow はブロックされる。ただし管理者対象の選択時は
@@ -223,22 +208,7 @@ namespace SCtoolGui
                 var self = new System.Windows.Interop.WindowInteropHelper(this).Handle;
                 if (self == IntPtr.Zero) { Activate(); return; }
 
-                IntPtr fg = GetForegroundWindow();
-                uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
-                uint thisThread = GetCurrentThreadId();
-
-                if (fgThread != thisThread && fgThread != 0)
-                {
-                    AttachThreadInput(thisThread, fgThread, true);
-                    BringWindowToTop(self);
-                    SetForegroundWindow(self);
-                    AttachThreadInput(thisThread, fgThread, false);
-                }
-                else
-                {
-                    BringWindowToTop(self);
-                    SetForegroundWindow(self);
-                }
+                ForegroundWindowHelper.TryForegroundOnce(self);
                 Activate();
             }
             catch { }

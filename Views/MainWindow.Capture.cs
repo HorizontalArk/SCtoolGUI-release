@@ -50,10 +50,8 @@ namespace SCtoolGui
             if ((_settingsManager.Current.HotkeyModifiers & 0x0004) != 0) keys.Add("Shift");
             if ((_settingsManager.Current.HotkeyModifiers & 0x0001) != 0) keys.Add("Alt");
             
-            string keyStr = (_settingsManager.Current.HotkeyKey >= 0x70 && _settingsManager.Current.HotkeyKey <= 0x7B) 
-                ? $"F{_settingsManager.Current.HotkeyKey - 0x70 + 1}" 
-                : ((char)_settingsManager.Current.HotkeyKey).ToString();
-            
+            string keyStr = HotKeyDisplay.KeyText(_settingsManager.Current.HotkeyKey);
+
             keys.Add(keyStr);
             // ボタンの静的テキストとアイコンは XAML 側。ここではホットキー表示(キーキャップ)だけ更新する。
             TxtCaptureHotkey.Text = string.Join(" + ", keys);

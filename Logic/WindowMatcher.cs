@@ -116,12 +116,14 @@ namespace SCtoolGui
             return string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// 自アプリのウィンドウ(メイン画面・詳細設定)かどうか。列挙対象から除外するのに使う。
-        /// タイトルはMainWindow.xaml/SettingsWindow.xamlのTitleと一致させる必要がある
-        /// (Services/SingleInstance.csにも別途 "SCtool" 判定があるため、いずれかを変更したら両方確認する)。
-        /// </summary>
+        /// <summary>自アプリのメインウィンドウのタイトル。MainWindow.xamlのTitleと一致させる。</summary>
+        public const string MainWindowTitle = "SCtool";
+
+        /// <summary>自アプリの詳細設定ウィンドウのタイトル。SettingsWindow.xamlのTitleと一致させる。</summary>
+        public const string SettingsWindowTitle = "詳細設定";
+
+        /// <summary>自アプリのウィンドウ(メイン画面・詳細設定)かどうか。列挙対象から除外するのに使う。</summary>
         public static bool IsOwnAppWindowTitle(string title)
-            => title == "SCtool" || title == "詳細設定";
+            => title == MainWindowTitle || title == SettingsWindowTitle;
     }
 }
