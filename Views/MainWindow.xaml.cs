@@ -191,25 +191,10 @@ namespace SCtoolGui
             base.OnClosed(e);
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern bool BringWindowToTop(IntPtr hWnd);
-
         /// <summary>
         /// 撮影のため対象を前面化した後、ツール自身を前面へ戻す。
-        ///
-        /// SetForegroundWindow は、直前に別アプリがフォアグラウンドを取った状態では
-        /// OS のフォアグラウンドロックにより無視される。そこで前面スレッドへ一時的に
-        /// AttachThreadInput してから前面化することで、確実にツールを前面へ戻す。
+        /// SetForegroundWindow のフォアグラウンドロック回避手法は ForegroundWindowHelper に
+        /// 共通化してある(ScreenCapture の対象ウィンドウ前面化と同じ手法)。
         ///
         /// なお対象が管理者権限ウィンドウで SCtool が非管理者の場合、UIPI により
         /// AttachThreadInput/SetForegroundWindow はブロックされる。ただし管理者対象の選択時は
@@ -223,22 +208,7 @@ namespace SCtoolGui
                 var self = new System.Windows.Interop.WindowInteropHelper(this).Handle;
                 if (self == IntPtr.Zero) { Activate(); return; }
 
-                IntPtr fg = GetForegroundWindow();
-                uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
-                uint thisThread = GetCurrentThreadId();
-
-                if (fgThread != thisThread && fgThread != 0)
-                {
-                    AttachThreadInput(thisThread, fgThread, true);
-                    BringWindowToTop(self);
-                    SetForegroundWindow(self);
-                    AttachThreadInput(thisThread, fgThread, false);
-                }
-                else
-                {
-                    BringWindowToTop(self);
-                    SetForegroundWindow(self);
-                }
+                ForegroundWindowHelper.TryForegroundOnce(self);
                 Activate();
             }
             catch { }
@@ -529,30 +499,9 @@ namespace SCtoolGui
             catch { }
             bool developerUnlocked = DeveloperModeGate.IsUnlocked(devKey);
 
-            // ★引数に _settingsManager.Current.ShutterVolume を追加
-            var settingsWin = new SettingsWindow(
-                _settingsManager.Current.SaveDirectory,
-                _settingsManager.Current.HotkeyModifiers,
-                _settingsManager.Current.HotkeyKey,
-                _settingsManager.Current.AppTopmost,
-                _settingsManager.Current.SaveInWindowNameFolder,
-                _settingsManager.Current.ResetSettingsOnWindowChange,
-                _settingsManager.Current.AutoCopyClipboard,
-                _settingsManager.Current.PlayShutterSound,
-                _settingsManager.Current.ShutterVolume,
-                _settingsManager.Current.AlwaysRunAsAdmin,
-                _settingsManager.Current.Theme,
-                _settingsManager.Current.IconPath,
-                _settingsManager.Current.VerticalPreviewSide,
-                _settingsManager.Current.PreviewAutoSwitch,
-                _settingsManager.Current.UseWindowTitleForFileName,
-                _settingsManager.Current.CopySource,
-                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
-                _settingsManager.Current.RestoreFocusToToolOnCapture,
-                _settingsManager.Current.RestoreFocusToToolOnPreview,
-                developerUnlocked,
-                _settingsManager.Current.DeveloperModeEnabled,
-                _settingsManager.Current.IncludePrereleases) { Owner = this };
+            // SettingsWindowには_settingsManager.Currentをそのまま渡す。保存時にこの参照へ直接
+            // 書き戻されるため、ここでの個別コピーは不要(下のShowDialog後も同様)。
+            var settingsWin = new SettingsWindow(_settingsManager.Current, developerUnlocked) { Owner = this };
 
             // 開発者タブの状態表示とバージョン一覧・適用のコールバックを配線する。
             settingsWin.SetDeveloperStatus(
@@ -577,40 +526,14 @@ namespace SCtoolGui
             };
 
             if (settingsWin.ShowDialog() == true) {
-                _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
-                _settingsManager.Current.HotkeyModifiers = settingsWin.ResultModifiers;
-                _settingsManager.Current.HotkeyKey = settingsWin.ResultKey;
-                _settingsManager.Current.AppTopmost = settingsWin.ResultAppTopmost;
-                _settingsManager.Current.SaveInWindowNameFolder = settingsWin.ResultSaveInWindowNameFolder;
-                _settingsManager.Current.ResetSettingsOnWindowChange = settingsWin.ResultResetSettingsOnWindowChange;
-                _settingsManager.Current.AutoCopyClipboard = settingsWin.ResultAutoCopyClipboard;
-                _settingsManager.Current.PlayShutterSound = settingsWin.ResultPlayShutterSound;
-                
-                // ★結果を受け取る
-                _settingsManager.Current.ShutterVolume = settingsWin.ResultShutterVolume;
-
-                _settingsManager.Current.AlwaysRunAsAdmin = settingsWin.ResultAlwaysRunAsAdmin;
-
-                _settingsManager.Current.Theme = settingsWin.ResultTheme;
+                // _settingsManager.Current は保存時に既に更新済み(SettingsWindowが直接書き戻す)。
+                // ここでは値の変化に伴う副作用の反映だけを行う。
                 ThemeManager.Apply(_settingsManager.Current.Theme);
 
-                _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
                 ApplyWindowIcon();
                 // タスクバー等の .lnk 群にも反映する（反映は次回起動/サインインで確実化）。
                 ApplyIconToShortcuts();
 
-                _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
-                _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
-
-                _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
-                _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
-
-                _settingsManager.Current.UnifyCaptureAndPreviewFocus = settingsWin.ResultUnifyCaptureAndPreviewFocus;
-                _settingsManager.Current.RestoreFocusToToolOnCapture = settingsWin.ResultRestoreFocusToToolOnCapture;
-                _settingsManager.Current.RestoreFocusToToolOnPreview = settingsWin.ResultRestoreFocusToToolOnPreview;
-
-                _settingsManager.Current.DeveloperModeEnabled = settingsWin.ResultDeveloperModeEnabled;
-                _settingsManager.Current.IncludePrereleases = settingsWin.ResultIncludePrereleases;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
                 if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 

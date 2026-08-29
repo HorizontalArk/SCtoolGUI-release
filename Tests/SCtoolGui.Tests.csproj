@@ -24,26 +24,28 @@
     ソースをリンクして取り込む。これによりテストは net10.0 のまま高速に動く。
   -->
   <ItemGroup>
-    <Compile Include="..\WindowMatcher.cs" Link="Source\WindowMatcher.cs" />
-    <Compile Include="..\WindowItem.cs" Link="Source\WindowItem.cs" />
-    <Compile Include="..\TargetInfo.cs" Link="Source\TargetInfo.cs" />
-    <Compile Include="..\SettingsManager.cs" Link="Source\SettingsManager.cs" />
-    <Compile Include="..\ProcessElevation.cs" Link="Source\ProcessElevation.cs" />
-    <Compile Include="..\FileNameUtil.cs" Link="Source\FileNameUtil.cs" />
-    <Compile Include="..\ShortcutLocationResolver.cs" Link="Source\ShortcutLocationResolver.cs" />
-    <Compile Include="..\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
-    <Compile Include="..\PreviewOrientationLogic.cs" Link="Source\PreviewOrientationLogic.cs" />
-    <Compile Include="..\IconIcoWriter.cs" Link="Source\IconIcoWriter.cs" />
-    <Compile Include="..\ShortcutIconUpdater.cs" Link="Source\ShortcutIconUpdater.cs" />
-    <Compile Include="..\FileBaseNameResolver.cs" Link="Source\FileBaseNameResolver.cs" />
-    <Compile Include="..\CaptureFileName.cs" Link="Source\CaptureFileName.cs" />
-    <Compile Include="..\LogFormatter.cs" Link="Source\LogFormatter.cs" />
-    <Compile Include="..\CopyTargetResolver.cs" Link="Source\CopyTargetResolver.cs" />
-    <Compile Include="..\DeveloperModeGate.cs" Link="Source\DeveloperModeGate.cs" />
-    <Compile Include="..\WindowPlacementLogic.cs" Link="Source\WindowPlacementLogic.cs" />
-    <Compile Include="..\FocusRestoreLogic.cs" Link="Source\FocusRestoreLogic.cs" />
-    <Compile Include="..\UpdateFlow.cs" Link="Source\UpdateFlow.cs" />
-    <Compile Include="..\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
+    <Compile Include="..\Logic\WindowMatcher.cs" Link="Source\WindowMatcher.cs" />
+    <Compile Include="..\Logic\WindowItem.cs" Link="Source\WindowItem.cs" />
+    <Compile Include="..\Logic\TargetInfo.cs" Link="Source\TargetInfo.cs" />
+    <Compile Include="..\Logic\SettingsManager.cs" Link="Source\SettingsManager.cs" />
+    <Compile Include="..\Logic\ProcessElevation.cs" Link="Source\ProcessElevation.cs" />
+    <Compile Include="..\Logic\FileNameUtil.cs" Link="Source\FileNameUtil.cs" />
+    <Compile Include="..\Logic\ShortcutLocationResolver.cs" Link="Source\ShortcutLocationResolver.cs" />
+    <Compile Include="..\Logic\FolderRenamePlanner.cs" Link="Source\FolderRenamePlanner.cs" />
+    <Compile Include="..\Logic\PreviewOrientationLogic.cs" Link="Source\PreviewOrientationLogic.cs" />
+    <Compile Include="..\Logic\IconIcoWriter.cs" Link="Source\IconIcoWriter.cs" />
+    <Compile Include="..\Logic\ShortcutIconUpdater.cs" Link="Source\ShortcutIconUpdater.cs" />
+    <Compile Include="..\Logic\FileBaseNameResolver.cs" Link="Source\FileBaseNameResolver.cs" />
+    <Compile Include="..\Logic\CaptureFileName.cs" Link="Source\CaptureFileName.cs" />
+    <Compile Include="..\Logic\LogFormatter.cs" Link="Source\LogFormatter.cs" />
+    <Compile Include="..\Logic\CopyTargetResolver.cs" Link="Source\CopyTargetResolver.cs" />
+    <Compile Include="..\Logic\DeveloperModeGate.cs" Link="Source\DeveloperModeGate.cs" />
+    <Compile Include="..\Logic\WindowPlacementLogic.cs" Link="Source\WindowPlacementLogic.cs" />
+    <Compile Include="..\Logic\FocusRestoreLogic.cs" Link="Source\FocusRestoreLogic.cs" />
+    <Compile Include="..\Logic\UpdateFlow.cs" Link="Source\UpdateFlow.cs" />
+    <Compile Include="..\Logic\CopyButtonState.cs" Link="Source\CopyButtonState.cs" />
+    <Compile Include="..\Logic\CaptureCropCalculator.cs" Link="Source\CaptureCropCalculator.cs" />
+    <Compile Include="..\Logic\HotKeyDisplay.cs" Link="Source\HotKeyDisplay.cs" />
   </ItemGroup>
 
 </Project>

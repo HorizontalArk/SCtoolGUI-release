@@ -451,7 +451,7 @@ namespace SCtoolGui
             get
             {
                 string name = CurrentTarget?.DisplayName ?? "";
-                return string.IsNullOrEmpty(name) ? "{ウィンドウ名}" : GetSafeFileName(name);
+                return string.IsNullOrEmpty(name) ? "{ウィンドウ名}" : FileNameUtil.ToSafeName(name);
             }
         }
 
@@ -493,7 +493,5 @@ namespace SCtoolGui
                 return !string.IsNullOrEmpty(t.LastKnownTitle) ? t.LastKnownTitle : t.DisplayName;
             }
         }
-
-        private string GetSafeFileName(string name) => FileNameUtil.ToSafeName(name);
     }
 }

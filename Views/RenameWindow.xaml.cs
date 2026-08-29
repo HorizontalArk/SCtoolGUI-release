@@ -46,7 +46,7 @@ namespace SCtoolGui
             }
 
             // フォルダ名にも使うため、パスとして成立しない名前は弾く
-            if (!IsValidFolderName(name))
+            if (!FileNameUtil.IsValidFolderName(name))
             {
                 ShowError("フォルダ名に使えない文字が含まれています: \\ / : * ? \" < > |");
                 return;
@@ -61,13 +61,6 @@ namespace SCtoolGui
             TxtError.Text = message;
             TxtError.Visibility = Visibility.Visible;
             TxtName.Focus();
-        }
-
-        /// <summary>フォルダ名として使える文字だけで構成されているか。</summary>
-        public static bool IsValidFolderName(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name)) return false;
-            return name.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0;
         }
     }
 }

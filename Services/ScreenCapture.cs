@@ -13,31 +13,9 @@ namespace SCtoolGui
     {
         [DllImport("dwmapi.dll")]
         private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
-        
-        [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hwnd);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll")]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr processId);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
-
-        [DllImport("user32.dll")]
-        private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-        [DllImport("user32.dll")]
-        private static extern bool BringWindowToTop(IntPtr hWnd);
 
         public struct RECT { public int Left, Top, Right, Bottom; }
         private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
-
-        // ★追加: Windowsのシステム枠（アクセントカラー枠）を除外するためのカット量(px)
-        // 上下左右からこのピクセル分だけ内側をキャプチャします。
-        private const int SYSTEM_BORDER_CUT = 1;
 
         /// <summary>対象が前面に来るのを待つ最大時間(ms)。これを超えたら撮影を中止する。</summary>
         private const int ForegroundTimeoutMs = 1000;
@@ -61,38 +39,17 @@ namespace SCtoolGui
         /// <returns>前面にできた場合は true。時間内に前面にならなければ false。</returns>
         private static bool TryBringToForeground(IntPtr hwnd)
         {
-            if (GetForegroundWindow() == hwnd) return true;
+            if (ForegroundWindowHelper.GetForeground() == hwnd) return true;
 
-            // SetForegroundWindow は、直前に別アプリがフォアグラウンドを握っている状態では
-            // OS のフォアグラウンドロックにより無視される。そこで現在の前面スレッドへ一時的に
-            // AttachThreadInput してから前面化することで、確実に対象を前面へ出す。
-            // （自ウィンドウ復帰の BringToolToForeground と同じ手法）
-            IntPtr fg = GetForegroundWindow();
-            uint fgThread = GetWindowThreadProcessId(fg, IntPtr.Zero);
-            uint thisThread = GetCurrentThreadId();
-
-            bool attached = false;
-            try
-            {
-                if (fgThread != thisThread && fgThread != 0)
-                {
-                    attached = AttachThreadInput(thisThread, fgThread, true);
-                }
-
-                // 最大化状態を通常サイズへ戻してしまわないよう ShowWindow(SW_RESTORE) は使わない。
-                BringWindowToTop(hwnd);
-                SetForegroundWindow(hwnd);
-            }
-            finally
-            {
-                if (attached) AttachThreadInput(thisThread, fgThread, false);
-            }
+            // 最大化状態を通常サイズへ戻してしまわないよう ShowWindow(SW_RESTORE) は使わない。
+            // （自ウィンドウ復帰の BringToolToForeground と同じ手法。ForegroundWindowHelperに共通化してある）
+            ForegroundWindowHelper.TryForegroundOnce(hwnd);
 
             // 固定待ちではなく実際に前面になるまで待つ。多くの場合250msより短く済む。
             var sw = System.Diagnostics.Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < ForegroundTimeoutMs)
             {
-                if (GetForegroundWindow() == hwnd)
+                if (ForegroundWindowHelper.GetForeground() == hwnd)
                 {
                     System.Threading.Thread.Sleep(PostForegroundSettleMs);
                     return true;
@@ -100,7 +57,7 @@ namespace SCtoolGui
                 System.Threading.Thread.Sleep(ForegroundPollIntervalMs);
             }
 
-            return GetForegroundWindow() == hwnd;
+            return ForegroundWindowHelper.GetForeground() == hwnd;
         }
 
         /// <summary>ウィンドウの外枠（DWMの拡張フレーム境界）を取得する。</summary>
@@ -152,29 +109,23 @@ namespace SCtoolGui
 
             RECT rect = GetWindowBounds(hwnd);
 
-            int originalWidth = rect.Right - rect.Left;
-            int originalHeight = rect.Bottom - rect.Top;
+            // 左右・上下からシステム枠分を削った実際のキャプチャサイズを計算する
+            var crop = CaptureCropCalculator.Compute(rect.Left, rect.Top, rect.Right, rect.Bottom, topCutPixels);
+            if (!crop.IsValid) throw new Exception("ウィンドウサイズが正しく取得できません、またはカット後のサイズが不正です。");
 
-            // ★修正: 左右・上下からシステム枠分を削った実際のキャプチャサイズを計算
-            int captureWidth = originalWidth - (SYSTEM_BORDER_CUT * 2);
-            int captureHeight = originalHeight - (SYSTEM_BORDER_CUT * 2);
-
-            int finalHeight = captureHeight - topCutPixels;
-
-            if (captureWidth <= 0 || finalHeight <= 0) throw new Exception("ウィンドウサイズが正しく取得できません、またはカット後のサイズが不正です。");
-
-            using (Bitmap fullBmp = new Bitmap(captureWidth, captureHeight))
+            using (Bitmap fullBmp = new Bitmap(crop.CaptureWidth, crop.CaptureHeight))
             using (Graphics g = Graphics.FromImage(fullBmp))
             {
-                // ★修正: 座標をシステム枠分（1px）内側にずらして画面をコピーする
-                g.CopyFromScreen(rect.Left + SYSTEM_BORDER_CUT, rect.Top + SYSTEM_BORDER_CUT, 0, 0, new Size(captureWidth, captureHeight), CopyPixelOperation.SourceCopy);
-                
+                // 座標をシステム枠分だけ内側にずらして画面をコピーする
+                int cut = CaptureCropCalculator.SystemBorderCut;
+                g.CopyFromScreen(rect.Left + cut, rect.Top + cut, 0, 0, new Size(crop.CaptureWidth, crop.CaptureHeight), CopyPixelOperation.SourceCopy);
+
                 SaveJpeg(fullBmp, previewPath);
 
-                using (Bitmap cutBmp = new Bitmap(captureWidth, finalHeight))
+                using (Bitmap cutBmp = new Bitmap(crop.CaptureWidth, crop.FinalHeight))
                 using (Graphics gCut = Graphics.FromImage(cutBmp))
                 {
-                    gCut.DrawImage(fullBmp, new Rectangle(0, 0, captureWidth, finalHeight), new Rectangle(0, topCutPixels, captureWidth, finalHeight), GraphicsUnit.Pixel);
+                    gCut.DrawImage(fullBmp, new Rectangle(0, 0, crop.CaptureWidth, crop.FinalHeight), new Rectangle(0, topCutPixels, crop.CaptureWidth, crop.FinalHeight), GraphicsUnit.Pixel);
                     AddExifData(cutBmp);
                     SaveJpeg(cutBmp, savePath);
                 }
@@ -190,20 +141,15 @@ namespace SCtoolGui
 
                 RECT rect = GetWindowBounds(hwnd);
 
-                int originalWidth = rect.Right - rect.Left;
-                int originalHeight = rect.Bottom - rect.Top;
+                // 一時プレビュー用のキャプチャでも同様に枠を削る(トップカットは適用しない)
+                var crop = CaptureCropCalculator.Compute(rect.Left, rect.Top, rect.Right, rect.Bottom, topCutPixels: 0);
+                if (!crop.IsValid) return false;
 
-                // ★修正: 一時プレビュー用のキャプチャでも同様に枠を削る
-                int captureWidth = originalWidth - (SYSTEM_BORDER_CUT * 2);
-                int captureHeight = originalHeight - (SYSTEM_BORDER_CUT * 2);
-
-                if (captureWidth <= 0 || captureHeight <= 0) return false;
-
-                using (Bitmap fullBmp = new Bitmap(captureWidth, captureHeight))
+                using (Bitmap fullBmp = new Bitmap(crop.CaptureWidth, crop.CaptureHeight))
                 using (Graphics g = Graphics.FromImage(fullBmp))
                 {
-                    // ★修正: こちらも座標をずらす
-                    g.CopyFromScreen(rect.Left + SYSTEM_BORDER_CUT, rect.Top + SYSTEM_BORDER_CUT, 0, 0, new Size(captureWidth, captureHeight), CopyPixelOperation.SourceCopy);
+                    int cut = CaptureCropCalculator.SystemBorderCut;
+                    g.CopyFromScreen(rect.Left + cut, rect.Top + cut, 0, 0, new Size(crop.CaptureWidth, crop.CaptureHeight), CopyPixelOperation.SourceCopy);
                     SaveJpeg(fullBmp, previewPath);
                 }
                 return true;

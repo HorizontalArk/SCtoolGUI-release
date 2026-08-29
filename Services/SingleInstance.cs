@@ -46,10 +46,10 @@ namespace SCtoolGui
             _mutex = null;
         }
 
-        /// <summary>既に起動しているウィンドウ（タイトル "SCtool"）を前面に出す。</summary>
+        /// <summary>既に起動しているメインウィンドウを前面に出す。</summary>
         public static void ActivateExisting()
         {
-            IntPtr h = FindWindow(null, "SCtool");
+            IntPtr h = FindWindow(null, WindowMatcher.MainWindowTitle);
             if (h != IntPtr.Zero)
             {
                 ShowWindow(h, SW_RESTORE);
