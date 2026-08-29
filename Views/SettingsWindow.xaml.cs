@@ -14,44 +14,18 @@ namespace SCtoolGui
 
     public partial class SettingsWindow : Window
     {
-        public string ResultSaveDir { get; private set; } = "";
-        public uint ResultModifiers { get; private set; }
-        public uint ResultKey { get; private set; }
-        public bool ResultAppTopmost { get; private set; }
-        public bool ResultSaveInWindowNameFolder { get; private set; }
-        public bool ResultResetSettingsOnWindowChange { get; private set; }
-        public bool ResultAutoCopyClipboard { get; private set; }
-        public bool ResultPlayShutterSound { get; private set; }
-        
-        // ★追加: 音量の結果を受け渡すプロパティ
-        public double ResultShutterVolume { get; private set; }
+        // ダイアログ表示元から渡された設定そのもの。保存ボタン押下時にこの参照へ直接書き戻すため、
+        // 呼び出し側は ShowDialog() が true を返した後、追加のコピー作業なしに最新値を参照できる。
+        private readonly AppSettings _settings;
 
-        public bool ResultAlwaysRunAsAdmin { get; private set; }
-
-        public string ResultTheme { get; private set; } = "System";
-
-        public string ResultIconPath { get; private set; } = "";
-
-        public string ResultVerticalPreviewSide { get; private set; } = "Right";
-        public string ResultPreviewAutoSwitch { get; private set; } = "Prompt";
-
-        public bool ResultUseWindowTitleForFileName { get; private set; }
-        public string ResultCopySource { get; private set; } = "LastSaved";
-
-        public bool ResultUnifyCaptureAndPreviewFocus { get; private set; } = true;
-        public bool ResultRestoreFocusToToolOnCapture { get; private set; }
-        public bool ResultRestoreFocusToToolOnPreview { get; private set; }
-
-        public bool ResultDeveloperModeEnabled { get; private set; }
-        public bool ResultIncludePrereleases { get; private set; }
-
-        public SettingsWindow(string saveDir, uint modifiers, uint key, bool appTopmost, bool saveInWindowFolder, bool resetSettings, bool autoCopy, bool playShutterSound, double shutterVolume, bool alwaysRunAsAdmin, string theme, string iconPath, string verticalPreviewSide, string previewAutoSwitch, bool useWindowTitleForFileName, string copySource, bool unifyFocus, bool restoreOnCapture, bool restoreOnPreview, bool developerUnlocked, bool developerModeEnabled, bool includePrereleases)
+        public SettingsWindow(AppSettings settings, bool developerUnlocked)
         {
+            _settings = settings;
             InitializeComponent();
-            TxtSaveDir.Text = saveDir;
-            ChkCtrl.IsChecked = (modifiers & 0x0002) != 0;
-            ChkShift.IsChecked = (modifiers & 0x0004) != 0;
-            ChkAlt.IsChecked = (modifiers & 0x0001) != 0;
+            TxtSaveDir.Text = settings.SaveDirectory;
+            ChkCtrl.IsChecked = (settings.HotkeyModifiers & 0x0002) != 0;
+            ChkShift.IsChecked = (settings.HotkeyModifiers & 0x0004) != 0;
+            ChkAlt.IsChecked = (settings.HotkeyModifiers & 0x0001) != 0;
 
             // A〜Z ＋ 0〜9 ＋ F1〜F12 を選択肢にする
             var keys = new List<string>();
@@ -59,50 +33,51 @@ namespace SCtoolGui
             for (char c = '0'; c <= '9'; c++) keys.Add(c.ToString());
             for (int i = 1; i <= 12; i++) keys.Add($"F{i}");
             CmbKey.ItemsSource = keys;
-            
+
+            uint key = settings.HotkeyKey;
             string currentKeyStr = (key >= 0x70 && key <= 0x7B) ? $"F{key - 0x70 + 1}" : ((char)key).ToString();
             CmbKey.SelectedItem = currentKeyStr;
 
-            ChkAppTopmost.IsChecked = appTopmost;
-            ChkSaveInWindowFolder.IsChecked = saveInWindowFolder;
-            ChkResetSettingsOnWindowChange.IsChecked = resetSettings;
-            ChkAutoCopyClipboard.IsChecked = autoCopy;
-            
-            ChkPlayShutterSound.IsChecked = playShutterSound;
-            
-            // ★追加: 0.0〜1.0 の音量を 0〜100 に変換してスライダーにセット
-            SldVolume.Value = shutterVolume * 100;
+            ChkAppTopmost.IsChecked = settings.AppTopmost;
+            ChkSaveInWindowFolder.IsChecked = settings.SaveInWindowNameFolder;
+            ChkResetSettingsOnWindowChange.IsChecked = settings.ResetSettingsOnWindowChange;
+            ChkAutoCopyClipboard.IsChecked = settings.AutoCopyClipboard;
 
-            ChkAlwaysRunAsAdmin.IsChecked = alwaysRunAsAdmin;
+            ChkPlayShutterSound.IsChecked = settings.PlayShutterSound;
 
-            CmbTheme.SelectedIndex = theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
+            // 0.0〜1.0 の音量を 0〜100 に変換してスライダーにセット
+            SldVolume.Value = settings.ShutterVolume * 100;
 
-            TxtIconPath.Text = iconPath;
+            ChkAlwaysRunAsAdmin.IsChecked = settings.AlwaysRunAsAdmin;
 
-            CmbVerticalSide.SelectedIndex = verticalPreviewSide == "Left" ? 1 : 0;
-            CmbAutoSwitch.SelectedIndex = previewAutoSwitch switch
+            CmbTheme.SelectedIndex = settings.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
+
+            TxtIconPath.Text = settings.IconPath;
+
+            CmbVerticalSide.SelectedIndex = settings.VerticalPreviewSide == "Left" ? 1 : 0;
+            CmbAutoSwitch.SelectedIndex = settings.PreviewAutoSwitch switch
             {
                 "Off" => 0,
                 "Force" => 2,
                 _ => 1, // Prompt
             };
 
-            ChkUseWindowTitleForFileName.IsChecked = useWindowTitleForFileName;
-            CmbCopySource.SelectedIndex = copySource switch
+            ChkUseWindowTitleForFileName.IsChecked = settings.UseWindowTitleForFileName;
+            CmbCopySource.SelectedIndex = settings.CopySource switch
             {
                 "TempPreview" => 1,
                 "FreshPreview" => 2,
                 _ => 0,
             };
 
-            ChkUnifyFocus.IsChecked = unifyFocus;
-            ChkRestoreFocusOnCapture.IsChecked = restoreOnCapture;
-            ChkRestoreFocusOnPreview.IsChecked = restoreOnPreview;
+            ChkUnifyFocus.IsChecked = settings.UnifyCaptureAndPreviewFocus;
+            ChkRestoreFocusOnCapture.IsChecked = settings.RestoreFocusToToolOnCapture;
+            ChkRestoreFocusOnPreview.IsChecked = settings.RestoreFocusToToolOnPreview;
 
             // マーカー解錠時のみ開発者モードトグルを出す。未解錠なら一切出さない。
             ChkDeveloperMode.Visibility = developerUnlocked ? Visibility.Visible : Visibility.Collapsed;
-            ChkDeveloperMode.IsChecked = developerUnlocked && developerModeEnabled;
-            ChkIncludePrereleases.IsChecked = includePrereleases;
+            ChkDeveloperMode.IsChecked = developerUnlocked && settings.DeveloperModeEnabled;
+            ChkIncludePrereleases.IsChecked = settings.IncludePrereleases;
             UpdateDeveloperTabVisibility();
             UpdateDevStatus();
         }
@@ -110,11 +85,12 @@ namespace SCtoolGui
         private void ChkDeveloperMode_Changed(object sender, RoutedEventArgs e)
             => UpdateDeveloperTabVisibility();
 
-        /// <summary>開発者タブは、トグルが表示済み(=解錠)かつ ON のときだけ表示する。</summary>
+        /// <summary>開発者タブは、トグルが表示済み(=解錠)かつ ON のときだけ表示する。判定自体はDeveloperModeGateへ委譲。</summary>
         private void UpdateDeveloperTabVisibility()
         {
-            bool show = ChkDeveloperMode.Visibility == Visibility.Visible
-                        && ChkDeveloperMode.IsChecked == true;
+            bool unlocked = ChkDeveloperMode.Visibility == Visibility.Visible;
+            bool toggleOn = ChkDeveloperMode.IsChecked == true;
+            bool show = DeveloperModeGate.ShouldShowDeveloperTab(unlocked, toggleOn);
             if (TabDeveloper != null)
                 TabDeveloper.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -188,57 +164,57 @@ namespace SCtoolGui
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            ResultSaveDir = TxtSaveDir.Text;
-            ResultModifiers = 0;
-            if (ChkCtrl.IsChecked == true) ResultModifiers |= 0x0002;
-            if (ChkShift.IsChecked == true) ResultModifiers |= 0x0004;
-            if (ChkAlt.IsChecked == true) ResultModifiers |= 0x0001;
+            _settings.SaveDirectory = TxtSaveDir.Text;
+
+            uint modifiers = 0;
+            if (ChkCtrl.IsChecked == true) modifiers |= 0x0002;
+            if (ChkShift.IsChecked == true) modifiers |= 0x0004;
+            if (ChkAlt.IsChecked == true) modifiers |= 0x0001;
+            _settings.HotkeyModifiers = modifiers;
 
             string selectedKey = CmbKey.SelectedItem?.ToString() ?? "S";
             // "F1"〜"F12" はファンクションキー、"F" 単体は通常のキーとして扱う
-            if (selectedKey.Length > 1 && selectedKey[0] == 'F') {
-                ResultKey = (uint)(0x70 + int.Parse(selectedKey.Substring(1)) - 1);
-            } else {
-                ResultKey = (uint)selectedKey[0];
-            }
+            _settings.HotkeyKey = (selectedKey.Length > 1 && selectedKey[0] == 'F')
+                ? (uint)(0x70 + int.Parse(selectedKey.Substring(1)) - 1)
+                : (uint)selectedKey[0];
 
-            ResultAppTopmost = ChkAppTopmost.IsChecked == true;
-            ResultSaveInWindowNameFolder = ChkSaveInWindowFolder.IsChecked == true;
-            ResultResetSettingsOnWindowChange = ChkResetSettingsOnWindowChange.IsChecked == true;
-            ResultAutoCopyClipboard = ChkAutoCopyClipboard.IsChecked == true;
-            ResultPlayShutterSound = ChkPlayShutterSound.IsChecked == true;
-            
-            // ★追加: スライダーの 0〜100 を 0.0〜1.0 に戻して保存
-            ResultShutterVolume = SldVolume.Value / 100.0;
+            _settings.AppTopmost = ChkAppTopmost.IsChecked == true;
+            _settings.SaveInWindowNameFolder = ChkSaveInWindowFolder.IsChecked == true;
+            _settings.ResetSettingsOnWindowChange = ChkResetSettingsOnWindowChange.IsChecked == true;
+            _settings.AutoCopyClipboard = ChkAutoCopyClipboard.IsChecked == true;
+            _settings.PlayShutterSound = ChkPlayShutterSound.IsChecked == true;
 
-            ResultAlwaysRunAsAdmin = ChkAlwaysRunAsAdmin.IsChecked == true;
+            // スライダーの 0〜100 を 0.0〜1.0 に戻して保存
+            _settings.ShutterVolume = SldVolume.Value / 100.0;
 
-            ResultTheme = CmbTheme.SelectedIndex switch { 1 => "Light", 2 => "Dark", _ => "System" };
+            _settings.AlwaysRunAsAdmin = ChkAlwaysRunAsAdmin.IsChecked == true;
 
-            ResultIconPath = TxtIconPath.Text;
+            _settings.Theme = CmbTheme.SelectedIndex switch { 1 => "Light", 2 => "Dark", _ => "System" };
 
-            ResultVerticalPreviewSide = CmbVerticalSide.SelectedIndex == 1 ? "Left" : "Right";
-            ResultPreviewAutoSwitch = CmbAutoSwitch.SelectedIndex switch
+            _settings.IconPath = TxtIconPath.Text;
+
+            _settings.VerticalPreviewSide = CmbVerticalSide.SelectedIndex == 1 ? "Left" : "Right";
+            _settings.PreviewAutoSwitch = CmbAutoSwitch.SelectedIndex switch
             {
                 0 => "Off",
                 2 => "Force",
                 _ => "Prompt",
             };
 
-            ResultUseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
-            ResultCopySource = CmbCopySource.SelectedIndex switch
+            _settings.UseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
+            _settings.CopySource = CmbCopySource.SelectedIndex switch
             {
                 1 => "TempPreview",
                 2 => "FreshPreview",
                 _ => "LastSaved",
             };
 
-            ResultUnifyCaptureAndPreviewFocus = ChkUnifyFocus.IsChecked == true;
-            ResultRestoreFocusToToolOnCapture = ChkRestoreFocusOnCapture.IsChecked == true;
-            ResultRestoreFocusToToolOnPreview = ChkRestoreFocusOnPreview.IsChecked == true;
+            _settings.UnifyCaptureAndPreviewFocus = ChkUnifyFocus.IsChecked == true;
+            _settings.RestoreFocusToToolOnCapture = ChkRestoreFocusOnCapture.IsChecked == true;
+            _settings.RestoreFocusToToolOnPreview = ChkRestoreFocusOnPreview.IsChecked == true;
 
-            ResultDeveloperModeEnabled = ChkDeveloperMode.IsChecked == true;
-            ResultIncludePrereleases = ChkIncludePrereleases.IsChecked == true;
+            _settings.DeveloperModeEnabled = ChkDeveloperMode.IsChecked == true;
+            _settings.IncludePrereleases = ChkIncludePrereleases.IsChecked == true;
 
             this.DialogResult = true;
         }

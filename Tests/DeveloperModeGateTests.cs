@@ -45,5 +45,15 @@ namespace SCtoolGui.Tests
                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
                 DeveloperModeGate.Sha256Hex("abc"));
         }
+
+        [Theory]
+        [InlineData(true, true, true)]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(false, false, false)]
+        public void 開発者タブは解錠済みかつトグルONのときだけ表示する(bool unlocked, bool toggleOn, bool expected)
+        {
+            Assert.Equal(expected, DeveloperModeGate.ShouldShowDeveloperTab(unlocked, toggleOn));
+        }
     }
 }

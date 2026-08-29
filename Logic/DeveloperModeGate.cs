@@ -36,5 +36,12 @@ namespace SCtoolGui
             foreach (byte b in bytes) sb.Append(b.ToString("x2"));
             return sb.ToString();
         }
+
+        /// <summary>
+        /// 設定画面の「開発者」タブを表示すべきか。解錠済み(developer.key照合成功)かつ
+        /// 開発者モードトグルがONのときのみ true。未解錠なら常に false。
+        /// </summary>
+        public static bool ShouldShowDeveloperTab(bool developerUnlocked, bool developerModeToggleOn)
+            => developerUnlocked && developerModeToggleOn;
     }
 }

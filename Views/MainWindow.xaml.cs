@@ -529,30 +529,9 @@ namespace SCtoolGui
             catch { }
             bool developerUnlocked = DeveloperModeGate.IsUnlocked(devKey);
 
-            // ★引数に _settingsManager.Current.ShutterVolume を追加
-            var settingsWin = new SettingsWindow(
-                _settingsManager.Current.SaveDirectory,
-                _settingsManager.Current.HotkeyModifiers,
-                _settingsManager.Current.HotkeyKey,
-                _settingsManager.Current.AppTopmost,
-                _settingsManager.Current.SaveInWindowNameFolder,
-                _settingsManager.Current.ResetSettingsOnWindowChange,
-                _settingsManager.Current.AutoCopyClipboard,
-                _settingsManager.Current.PlayShutterSound,
-                _settingsManager.Current.ShutterVolume,
-                _settingsManager.Current.AlwaysRunAsAdmin,
-                _settingsManager.Current.Theme,
-                _settingsManager.Current.IconPath,
-                _settingsManager.Current.VerticalPreviewSide,
-                _settingsManager.Current.PreviewAutoSwitch,
-                _settingsManager.Current.UseWindowTitleForFileName,
-                _settingsManager.Current.CopySource,
-                _settingsManager.Current.UnifyCaptureAndPreviewFocus,
-                _settingsManager.Current.RestoreFocusToToolOnCapture,
-                _settingsManager.Current.RestoreFocusToToolOnPreview,
-                developerUnlocked,
-                _settingsManager.Current.DeveloperModeEnabled,
-                _settingsManager.Current.IncludePrereleases) { Owner = this };
+            // SettingsWindowには_settingsManager.Currentをそのまま渡す。保存時にこの参照へ直接
+            // 書き戻されるため、ここでの個別コピーは不要(下のShowDialog後も同様)。
+            var settingsWin = new SettingsWindow(_settingsManager.Current, developerUnlocked) { Owner = this };
 
             // 開発者タブの状態表示とバージョン一覧・適用のコールバックを配線する。
             settingsWin.SetDeveloperStatus(
@@ -577,40 +556,14 @@ namespace SCtoolGui
             };
 
             if (settingsWin.ShowDialog() == true) {
-                _settingsManager.Current.SaveDirectory = settingsWin.ResultSaveDir;
-                _settingsManager.Current.HotkeyModifiers = settingsWin.ResultModifiers;
-                _settingsManager.Current.HotkeyKey = settingsWin.ResultKey;
-                _settingsManager.Current.AppTopmost = settingsWin.ResultAppTopmost;
-                _settingsManager.Current.SaveInWindowNameFolder = settingsWin.ResultSaveInWindowNameFolder;
-                _settingsManager.Current.ResetSettingsOnWindowChange = settingsWin.ResultResetSettingsOnWindowChange;
-                _settingsManager.Current.AutoCopyClipboard = settingsWin.ResultAutoCopyClipboard;
-                _settingsManager.Current.PlayShutterSound = settingsWin.ResultPlayShutterSound;
-                
-                // ★結果を受け取る
-                _settingsManager.Current.ShutterVolume = settingsWin.ResultShutterVolume;
-
-                _settingsManager.Current.AlwaysRunAsAdmin = settingsWin.ResultAlwaysRunAsAdmin;
-
-                _settingsManager.Current.Theme = settingsWin.ResultTheme;
+                // _settingsManager.Current は保存時に既に更新済み(SettingsWindowが直接書き戻す)。
+                // ここでは値の変化に伴う副作用の反映だけを行う。
                 ThemeManager.Apply(_settingsManager.Current.Theme);
 
-                _settingsManager.Current.IconPath = settingsWin.ResultIconPath;
                 ApplyWindowIcon();
                 // タスクバー等の .lnk 群にも反映する（反映は次回起動/サインインで確実化）。
                 ApplyIconToShortcuts();
 
-                _settingsManager.Current.VerticalPreviewSide = settingsWin.ResultVerticalPreviewSide;
-                _settingsManager.Current.PreviewAutoSwitch = settingsWin.ResultPreviewAutoSwitch;
-
-                _settingsManager.Current.UseWindowTitleForFileName = settingsWin.ResultUseWindowTitleForFileName;
-                _settingsManager.Current.CopySource = settingsWin.ResultCopySource;
-
-                _settingsManager.Current.UnifyCaptureAndPreviewFocus = settingsWin.ResultUnifyCaptureAndPreviewFocus;
-                _settingsManager.Current.RestoreFocusToToolOnCapture = settingsWin.ResultRestoreFocusToToolOnCapture;
-                _settingsManager.Current.RestoreFocusToToolOnPreview = settingsWin.ResultRestoreFocusToToolOnPreview;
-
-                _settingsManager.Current.DeveloperModeEnabled = settingsWin.ResultDeveloperModeEnabled;
-                _settingsManager.Current.IncludePrereleases = settingsWin.ResultIncludePrereleases;
                 // 縦時の左右が変わった場合、縦モードなら再適用して反映する
                 if (CurrentPreviewMode == PreviewMode.Vertical) ApplyPreviewOrientation(PreviewMode.Vertical);
 
