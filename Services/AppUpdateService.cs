@@ -9,7 +9,8 @@ namespace SCtoolGui
     /// <summary>Velopack による自動更新のラッパー。</summary>
     public class AppUpdateService
     {
-        private const string ReleasesRepoUrl = "https://github.com/HorizontalArk/SCtoolGUI-release";
+        /// <summary>リリース公開先のリポジトリURL。GitHub Releaseページのリンク組み立てにも使う。</summary>
+        public const string ReleasesRepoUrl = "https://github.com/HorizontalArk/SCtoolGUI-release";
         // 旧 git 版の SCtoolGui.UpdateManager と名前が衝突するため Velopack 側を明示修飾する。
         private readonly Velopack.UpdateManager _mgr;
         private readonly GithubSource _source;

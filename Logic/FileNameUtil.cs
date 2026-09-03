@@ -7,8 +7,9 @@ namespace SCtoolGui
     /// <summary>フォルダ名・ファイル名として安全な文字列を作るユーティリティ。</summary>
     public static class FileNameUtil
     {
-        /// <summary>フォルダ名が長くなりすぎないための上限。MAX_PATH 対策。</summary>
-        private const int MaxLength = 80;
+        /// <summary>フォルダ名が長くなりすぎないための上限。MAX_PATH 対策。
+        /// 呼び名入力(RenameWindow)のバリデーションでも同じ上限を使う。</summary>
+        public const int MaxLength = 80;
 
         /// <summary>
         /// 与えられた名前を、フォルダ名・ファイル名として安全な文字列に変換する。

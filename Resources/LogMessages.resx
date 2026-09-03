@@ -211,10 +211,10 @@
     <value>アップデートを確認中...</value>
   </data>
   <data name="UpdateAvailable" xml:space="preserve">
-    <value>新しいアップデートがあります。ボタンから更新できます。</value>
+    <value>新しいアップデート(v{0})があります。ボタンから更新できます。</value>
   </data>
   <data name="UpdateUpToDate" xml:space="preserve">
-    <value>アプリケーションは最新です。</value>
+    <value>アプリケーションは最新です(v{0})。</value>
   </data>
   <data name="UpdateCheckFailed" xml:space="preserve">
     <value>更新の確認に失敗しました（ネットワーク等）。</value>

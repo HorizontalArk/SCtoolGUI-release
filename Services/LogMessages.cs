@@ -76,8 +76,8 @@ namespace SCtoolGui
         // アップデート
         public static string UpdateSkippedNotInstalled => Get(nameof(UpdateSkippedNotInstalled));
         public static string UpdateChecking => Get(nameof(UpdateChecking));
-        public static string UpdateAvailable => Get(nameof(UpdateAvailable));
-        public static string UpdateUpToDate => Get(nameof(UpdateUpToDate));
+        public static string UpdateAvailable(string version) => Format(nameof(UpdateAvailable), version);
+        public static string UpdateUpToDate(string currentVersion) => Format(nameof(UpdateUpToDate), currentVersion);
         public static string UpdateCheckFailed => Get(nameof(UpdateCheckFailed));
         public static string UpdateDownloading => Get(nameof(UpdateDownloading));
 

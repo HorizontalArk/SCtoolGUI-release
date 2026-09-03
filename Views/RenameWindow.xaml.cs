@@ -52,6 +52,13 @@ namespace SCtoolGui
                 return;
             }
 
+            // 表示欄が際限なく伸びるのを防ぐ。保存フォルダ名の上限(FileNameUtil.ToSafeName)とも揃える
+            if (name.Length > FileNameUtil.MaxLength)
+            {
+                ShowError($"呼び名が長すぎます（最大{FileNameUtil.MaxLength}文字）。");
+                return;
+            }
+
             ResultName = name;
             DialogResult = true;
         }
