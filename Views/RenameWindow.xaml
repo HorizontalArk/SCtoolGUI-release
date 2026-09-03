@@ -15,8 +15,9 @@
         <TextBlock Grid.Row="0" TextWrapping="Wrap" Foreground="#444"
                    Text="一覧の表示と保存フォルダ名に使う呼び名です。アプリ側でウィンドウ名が変わっても、この名前は変わりません。"/>
 
+        <!-- MaxLength は FileNameUtil.MaxLength と揃える -->
         <TextBox x:Name="TxtName" Grid.Row="1" Margin="0,12,0,0" Padding="4"
-                 VerticalContentAlignment="Center" FontSize="14"
+                 VerticalContentAlignment="Center" FontSize="14" MaxLength="80"
                  KeyDown="TxtName_KeyDown"/>
 
         <TextBlock x:Name="TxtError" Grid.Row="2" Margin="0,6,0,0" Foreground="#C00000"

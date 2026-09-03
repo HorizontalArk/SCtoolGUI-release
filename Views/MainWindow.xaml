@@ -124,7 +124,8 @@
                                 <StackPanel Orientation="Horizontal" Background="Transparent">
                                     <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0"
                                            Stretch="Uniform" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
-                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <!-- MaxWidth が無いと Popup が長いウィンドウ名でどこまでも横に広がってしまう -->
+                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="440"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -149,7 +150,8 @@
                     <TextBlock Text="px" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                 </StackPanel>
 
-                <TextBlock x:Name="TxtWindowStatus" Margin="0,12,0,0" FontWeight="SemiBold" Foreground="Gray" Text="ウィンドウ状態: 取得中..."/>
+                <TextBlock x:Name="TxtWindowStatus" Margin="0,12,0,0" FontWeight="SemiBold" Foreground="Gray"
+                           TextWrapping="Wrap" Text="ウィンドウ状態: 取得中..."/>
                 <TextBlock x:Name="TxtCurrentSavePath" Margin="0,6,0,0" TextWrapping="Wrap" Text="現在の保存先: "
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
             </StackPanel>
