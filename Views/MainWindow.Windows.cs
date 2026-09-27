@@ -378,7 +378,7 @@ namespace SCtoolGui
 
             // ファイル名まで含めて見せる。可変なのは時刻部分だけなので、そこはプレースホルダで示す。
             string fileBase = ResolveCurrentFileBase(folderName);
-            string fileName = CaptureFileName.Build(fileBase, CaptureFileName.TimePlaceholder);
+            string fileName = CaptureFileName.Build(fileBase, CaptureFileName.TimePlaceholder, _settingsManager.Current.SaveFormat);
             string displayPath = System.IO.Path.Combine(dirPath, fileName);
 
             if (TxtCurrentSavePath != null)

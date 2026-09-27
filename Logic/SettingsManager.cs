@@ -50,6 +50,9 @@ namespace SCtoolGui
         /// <summary>コピーボタンの既定対象。"LastSaved"（最後に保存した画像）/ "TempPreview"（一時プレビュー）。</summary>
         public string CopySource { get; set; } = "LastSaved";
 
+        /// <summary>スクショの保存形式。"Jpeg"（既定）/ "Png"（実験的。撮影日時は eXIf チャンクに書く）。</summary>
+        public string SaveFormat { get; set; } = CaptureFormat.Jpeg;
+
         public bool PlayShutterSound { get; set; } = true;
         // ★追加: シャッター音量 (0.0 ～ 1.0)
         public double ShutterVolume { get; set; } = 1.0;
