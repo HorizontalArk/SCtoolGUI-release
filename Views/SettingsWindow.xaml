@@ -137,6 +137,15 @@
                         <CheckBox x:Name="ChkUseWindowTitleForFileName" Style="{StaticResource ToggleSwitch}" Content="ファイル名に実際のウィンドウタイトルを使う" Margin="0,0,0,10"
                                   ToolTip="OFFなら登録名（表示名）をファイル名に使います。フォルダ名は設定に関わらず常に登録名です。"/>
 
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                            <TextBlock Text="保存形式:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbSaveFormat" Width="190"
+                                      ToolTip="PNG は劣化しませんがファイルが大きくなります。撮影日時は PNG の eXIf チャンクに書き込みます（読めないソフトもあります）。">
+                                <ComboBoxItem Content="JPEG（既定）"/>
+                                <ComboBoxItem Content="PNG（実験的）"/>
+                            </ComboBox>
+                        </StackPanel>
+
                         <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
                         <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>

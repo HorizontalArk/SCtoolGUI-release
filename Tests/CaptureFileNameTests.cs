@@ -19,6 +19,23 @@ namespace SCtoolGui.Tests
         }
 
         [Fact]
+        public void PNG形式ならpng拡張子を付ける()
+        {
+            string result = CaptureFileName.Build("MyGame", "20260817_143052", CaptureFormat.Png);
+            Assert.Equal("MyGame_20260817_143052.png", result);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("Unknown")]
+        public void 未知の保存形式はjpgとして扱う(string? format)
+        {
+            string result = CaptureFileName.Build("MyGame", "20260817_143052", format);
+            Assert.Equal("MyGame_20260817_143052.jpg", result);
+        }
+
+        [Fact]
         public void 時刻プレースホルダ定数はyyyymmdd_hhmmss形式()
         {
             Assert.Equal("yyyymmdd_hhmmss", CaptureFileName.TimePlaceholder);

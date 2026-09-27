@@ -96,7 +96,22 @@ namespace SCtoolGui
             bitmap.Save(path, JpegEncoder, parameters);
         }
 
-        public static void SaveWindowCaptureWithExif(IntPtr hwnd, string savePath, string previewPath, int topCutPixels = 0)
+        /// <summary>
+        /// PNG で保存し、撮影日時を eXIf チャンクとして書き込む。
+        /// GDI+ の PNG エンコーダは PropertyItem を捨てるため、エンコード後に自前で差し込む。
+        /// </summary>
+        private static void SavePngWithExif(Bitmap bitmap, string path)
+        {
+            using var ms = new MemoryStream();
+            bitmap.Save(ms, ImageFormat.Png);
+            File.WriteAllBytes(path, PngDateTakenWriter.InsertDateTaken(ms.ToArray(), DateTime.Now));
+        }
+
+        /// <summary>
+        /// 対象ウィンドウを撮影し、上部カット後の本番画像を撮影日時付きで savePath に保存する。
+        /// 一時プレビュー(previewPath)は保存形式に関わらず JPEG のまま。
+        /// </summary>
+        public static void SaveWindowCaptureWithExif(IntPtr hwnd, string savePath, string previewPath, int topCutPixels = 0, string? saveFormat = CaptureFormat.Jpeg)
         {
             // 前面化を先に行う。前面に来る際にウィンドウが移動・復元されることがあるため、
             // 座標の取得はその後にしないと古い位置を撮ってしまう。
@@ -126,8 +141,15 @@ namespace SCtoolGui
                 using (Graphics gCut = Graphics.FromImage(cutBmp))
                 {
                     gCut.DrawImage(fullBmp, new Rectangle(0, 0, crop.CaptureWidth, crop.FinalHeight), new Rectangle(0, topCutPixels, crop.CaptureWidth, crop.FinalHeight), GraphicsUnit.Pixel);
-                    AddExifData(cutBmp);
-                    SaveJpeg(cutBmp, savePath);
+                    if (CaptureFormat.IsPng(saveFormat))
+                    {
+                        SavePngWithExif(cutBmp, savePath);
+                    }
+                    else
+                    {
+                        AddExifData(cutBmp);
+                        SaveJpeg(cutBmp, savePath);
+                    }
                 }
             }
         }

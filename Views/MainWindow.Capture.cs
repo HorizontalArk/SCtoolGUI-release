@@ -124,11 +124,12 @@ namespace SCtoolGui
                     // 保存先プレビュー(UpdateCurrentSavePathDisplay)と同じ導出を共有し、表示と実結果を一致させる。
                     string fileBase = ResolveCurrentFileBase(folderName);
 
-                    string fileName = CaptureFileName.Build(fileBase, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+                    string saveFormat = _settingsManager.Current.SaveFormat;
+                    string fileName = CaptureFileName.Build(fileBase, DateTime.Now.ToString("yyyyMMdd_HHmmss"), saveFormat);
                     string fullPath = Path.Combine(targetDir, fileName);
                     int topCut = CurrentCutValue;
 
-                    ScreenCapture.SaveWindowCaptureWithExif(selected.Handle, fullPath, CapturePreviewPath, topCut);
+                    ScreenCapture.SaveWindowCaptureWithExif(selected.Handle, fullPath, CapturePreviewPath, topCut, saveFormat);
                     _lastCapturedPath = fullPath;
 
                     if (CurrentTarget is TargetInfo target) target.TopCut = topCut;
