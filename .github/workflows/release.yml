@@ -111,3 +111,18 @@ jobs:
           gh release upload ${{ github.ref_name }}
           "Releases\SCtoolGui-win-Setup-${{ steps.ver.outputs.version }}.exe"
           --repo HorizontalArk/SCtoolGUI-release
+
+      # アプリの更新通知の「詳細」リンクは Release ページへ飛ぶため、本文にアップデート内容を入れる。
+      # release-notes/<タグ名>.md（例: release-notes/v1.1.2.md）があればその内容を本文にする。
+      - name: リリースノートを本文に反映
+        if: hashFiles(format('release-notes/{0}.md', github.ref_name)) != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release edit ${{ github.ref_name }}
+          --notes-file "release-notes/${{ github.ref_name }}.md"
+          --repo HorizontalArk/SCtoolGUI-release
+
+      - name: リリースノートが無い場合に警告
+        if: hashFiles(format('release-notes/{0}.md', github.ref_name)) == ''
+        run: echo "::warning::release-notes/${{ github.ref_name }}.md が無いため、Release 本文は空のままです。"
