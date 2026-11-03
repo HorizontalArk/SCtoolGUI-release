@@ -308,13 +308,10 @@ namespace SCtoolGui
         {
             if (!HasLastCapture) return;
 
-            MessageBoxResult result = MessageBox.Show(
-                "一番最後にキャプチャした画像ファイルをPCから完全に削除しますか？",
-                "画像の削除確認",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
+            // 何が消えるのかを目で確かめられるよう、削除対象のプレビュー付きで確認する
+            var dialog = new DeleteConfirmWindow(_lastCapturedPath) { Owner = this };
 
-            if (result == MessageBoxResult.Yes) {
+            if (dialog.ShowDialog() == true) {
                 try {
                     string fileName = Path.GetFileName(_lastCapturedPath);
                     File.Delete(_lastCapturedPath);

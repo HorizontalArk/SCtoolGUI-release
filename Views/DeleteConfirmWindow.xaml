@@ -1,0 +1,49 @@
+<Window x:Class="SCtoolGui.DeleteConfirmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="画像の削除確認" Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                   Text="次の画像ファイルをPCから完全に削除しますか？（ごみ箱には移動しません）"/>
+
+        <!-- 削除対象のプレビュー。縦長・横長どちらでも収まるよう Uniform で縮小表示する -->
+        <Border Grid.Row="1" Margin="0,12,0,0" Height="260" CornerRadius="4"
+                Background="{DynamicResource ControlFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+            <Image x:Name="ImgTarget" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+        </Border>
+
+        <StackPanel Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock x:Name="TxtFileName" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+            <TextBlock x:Name="TxtFileInfo" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+        </StackPanel>
+
+        <!-- 誤削除を防ぐため初期フォーカスはキャンセル（Enter/Esc ともキャンセルになる）。
+             IsDefault を付けると Fluent テーマでアクセント表示になり文字が見えにくくなるため付けない。 -->
+        <StackPanel Grid.Row="3" Margin="0,15,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="BtnDelete" MinWidth="90" Padding="10,6" Margin="0,0,8,0" Click="BtnDelete_Click">
+                <StackPanel Orientation="Horizontal">
+                    <!-- メイン画面の削除ボタンと同じゴミ箱アイコン -->
+                    <TextBlock Text="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15"
+                               VerticalAlignment="Center" Margin="0,0,6,0"
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"/>
+                    <TextBlock Text="削除" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="BtnCancel" Content="キャンセル" MinWidth="90" Padding="10,6" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
