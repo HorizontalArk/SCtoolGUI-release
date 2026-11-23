@@ -53,6 +53,9 @@ namespace SCtoolGui
         /// <summary>スクショの保存形式。"Jpeg"（既定）/ "Png"（撮影日時は eXIf と XMP に書く）。</summary>
         public string SaveFormat { get; set; } = CaptureFormat.Jpeg;
 
+        /// <summary>ファイル名の並び順。"NameFirst"（既定: 保存名_時刻）/ "TimeFirst"（時刻_保存名）。</summary>
+        public string FileNameOrder { get; set; } = CaptureFileNameOrder.NameFirst;
+
         public bool PlayShutterSound { get; set; } = true;
         // ★追加: シャッター音量 (0.0 ～ 1.0)
         public double ShutterVolume { get; set; } = 1.0;

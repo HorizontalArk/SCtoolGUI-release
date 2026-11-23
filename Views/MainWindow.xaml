@@ -131,7 +131,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <Button x:Name="BtnRenameTarget" Grid.Column="1" Margin="8,0,0,0" Padding="10,4" Click="BtnRenameTarget_Click"
-                            ToolTip="このアプリの呼び名を変更します&#x0a;保存フォルダ名にも使われます">
+                            ToolTip="このアプリの登録名を変更します&#x0a;保存フォルダ名にも使われます">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" Margin="0,0,6,0"/>
                             <TextBlock Text="名前変更" VerticalAlignment="Center"/>

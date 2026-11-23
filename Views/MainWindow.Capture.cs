@@ -125,7 +125,7 @@ namespace SCtoolGui
                     string fileBase = ResolveCurrentFileBase(folderName);
 
                     string saveFormat = _settingsManager.Current.SaveFormat;
-                    string fileName = CaptureFileName.Build(fileBase, DateTime.Now.ToString("yyyyMMdd_HHmmss"), saveFormat);
+                    string fileName = CaptureFileName.Build(fileBase, DateTime.Now.ToString("yyyyMMdd_HHmmss"), saveFormat, _settingsManager.Current.FileNameOrder);
                     string fullPath = Path.Combine(targetDir, fileName);
                     int topCut = CurrentCutValue;
 

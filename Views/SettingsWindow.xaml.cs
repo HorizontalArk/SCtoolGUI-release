@@ -62,6 +62,7 @@ namespace SCtoolGui
 
             ChkUseWindowTitleForFileName.IsChecked = settings.UseWindowTitleForFileName;
             CmbSaveFormat.SelectedIndex = CaptureFormat.IsPng(settings.SaveFormat) ? 1 : 0;
+            CmbFileNameOrder.SelectedIndex = CaptureFileNameOrder.IsTimeFirst(settings.FileNameOrder) ? 1 : 0;
             CmbCopySource.SelectedIndex = settings.CopySource switch
             {
                 "TempPreview" => 1,
@@ -202,6 +203,7 @@ namespace SCtoolGui
 
             _settings.UseWindowTitleForFileName = ChkUseWindowTitleForFileName.IsChecked == true;
             _settings.SaveFormat = CmbSaveFormat.SelectedIndex == 1 ? CaptureFormat.Png : CaptureFormat.Jpeg;
+            _settings.FileNameOrder = CmbFileNameOrder.SelectedIndex == 1 ? CaptureFileNameOrder.TimeFirst : CaptureFileNameOrder.NameFirst;
             _settings.CopySource = CmbCopySource.SelectedIndex switch
             {
                 1 => "TempPreview",

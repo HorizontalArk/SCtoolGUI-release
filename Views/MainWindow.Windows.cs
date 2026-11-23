@@ -269,7 +269,7 @@ namespace SCtoolGui
 
             var targetWindow = FindTargetWindow();
             // 状態表示には「選んだウィンドウ名(タイトル)」を出す。
-            // 保存フォルダ名に使う DisplayName(呼び名=exe名) とは別物なので分ける。
+            // 保存フォルダ名に使う DisplayName(登録名=exe名) とは別物なので分ける。
             string name = !string.IsNullOrEmpty(target.LastKnownTitle) ? target.LastKnownTitle : target.DisplayName;
 
             if (targetWindow != null) {
@@ -378,7 +378,7 @@ namespace SCtoolGui
 
             // ファイル名まで含めて見せる。可変なのは時刻部分だけなので、そこはプレースホルダで示す。
             string fileBase = ResolveCurrentFileBase(folderName);
-            string fileName = CaptureFileName.Build(fileBase, CaptureFileName.TimePlaceholder, _settingsManager.Current.SaveFormat);
+            string fileName = CaptureFileName.Build(fileBase, CaptureFileName.TimePlaceholder, _settingsManager.Current.SaveFormat, _settingsManager.Current.FileNameOrder);
             string displayPath = System.IO.Path.Combine(dirPath, fileName);
 
             if (TxtCurrentSavePath != null)
@@ -482,7 +482,7 @@ namespace SCtoolGui
 
         /// <summary>
         /// ログ表示に使う対象ウィンドウ名。状態表示（「〜は起動中です」）と同じく実タイトル
-        /// (LastKnownTitle) を基準にし、アプリ全体で表記を揃える。未取得なら呼び名にフォールバック。
+        /// (LastKnownTitle) を基準にし、アプリ全体で表記を揃える。未取得なら登録名にフォールバック。
         /// </summary>
         private string TargetLogName
         {

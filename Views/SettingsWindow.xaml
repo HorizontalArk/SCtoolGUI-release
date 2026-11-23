@@ -146,6 +146,15 @@
                             </ComboBox>
                         </StackPanel>
 
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                            <TextBlock Text="ファイル名の形式:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbFileNameOrder" Width="240"
+                                      ToolTip="保存するファイル名の並び順です。日時を先にすると、ファイル名順で撮影順に並びます。">
+                                <ComboBoxItem Content="{}{保存名}_{yyyyMMdd_hhmmss}（既定）"/>
+                                <ComboBoxItem Content="{}{yyyyMMdd_hhmmss}_{保存名}"/>
+                            </ComboBox>
+                        </StackPanel>
+
                         <CheckBox x:Name="ChkResetSettingsOnWindowChange" Style="{StaticResource ToggleSwitch}" Content="ウィンドウ切り替え時に上部カットを外す" Margin="0,0,0,10"/>
 
                         <CheckBox x:Name="ChkAutoCopyClipboard" Style="{StaticResource ToggleSwitch}" Content="キャプチャ時に画像をクリップボードに自動コピーする" Margin="0,0,0,10"/>
