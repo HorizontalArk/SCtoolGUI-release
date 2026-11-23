@@ -3,15 +3,15 @@ using System.Windows.Input;
 
 namespace SCtoolGui
 {
-    /// <summary>ターゲットの呼び名（DisplayName）を編集するダイアログ。</summary>
+    /// <summary>ターゲットの登録名（DisplayName）を編集するダイアログ。</summary>
     public partial class RenameWindow : Window
     {
         private readonly string _defaultName;
 
-        /// <summary>入力された呼び名。OKで閉じた場合のみ有効。</summary>
+        /// <summary>入力された登録名。OKで閉じた場合のみ有効。</summary>
         public string ResultName { get; private set; } = "";
 
-        /// <param name="currentName">現在の呼び名。</param>
+        /// <param name="currentName">現在の登録名。</param>
         /// <param name="defaultName">「既定に戻す」で復元する名前（実行ファイル名由来）。</param>
         public RenameWindow(string currentName, string defaultName)
         {
@@ -41,7 +41,7 @@ namespace SCtoolGui
 
             if (string.IsNullOrEmpty(name))
             {
-                ShowError("呼び名を入力してください。");
+                ShowError("登録名を入力してください。");
                 return;
             }
 
@@ -55,7 +55,7 @@ namespace SCtoolGui
             // 表示欄が際限なく伸びるのを防ぐ。保存フォルダ名の上限(FileNameUtil.ToSafeName)とも揃える
             if (name.Length > FileNameUtil.MaxLength)
             {
-                ShowError($"呼び名が長すぎます（最大{FileNameUtil.MaxLength}文字）。");
+                ShowError($"登録名が長すぎます（最大{FileNameUtil.MaxLength}文字）。");
                 return;
             }
 

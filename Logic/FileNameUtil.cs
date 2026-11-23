@@ -8,7 +8,7 @@ namespace SCtoolGui
     public static class FileNameUtil
     {
         /// <summary>フォルダ名が長くなりすぎないための上限。MAX_PATH 対策。
-        /// 呼び名入力(RenameWindow)のバリデーションでも同じ上限を使う。</summary>
+        /// 登録名入力(RenameWindow)のバリデーションでも同じ上限を使う。</summary>
         public const int MaxLength = 80;
 
         /// <summary>

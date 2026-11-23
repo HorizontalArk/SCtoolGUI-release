@@ -8,7 +8,7 @@ namespace SCtoolGui
     public record FolderRenamePlan(FolderRenameAction Action, string? OldPath, string? NewPath);
 
     /// <summary>
-    /// 名前変更（呼び名変更）時に、旧名の画像フォルダを新名へ移動すべきか判定する純粋ロジック。
+    /// 名前変更時に、旧名の画像フォルダを新名へ移動すべきか判定する純粋ロジック。
     /// アプリごとフォルダ分けが有効で、旧フォルダが在り、新フォルダが未作成のときだけ移動する。
     /// </summary>
     public static class FolderRenamePlanner

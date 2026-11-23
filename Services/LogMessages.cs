@@ -61,7 +61,7 @@ namespace SCtoolGui
         public static string TopmostBlocked(string target, int errorCode) => Format(nameof(TopmostBlocked), target, errorCode);
         public static string NoTargetSelected => Get(nameof(NoTargetSelected));
 
-        // 画像フォルダ / 呼び名
+        // 画像フォルダ / 登録名
         public static string FolderMoved(string oldName, string newName) => Format(nameof(FolderMoved), oldName, newName);
         public static string FolderMoveFailed(string message) => Format(nameof(FolderMoveFailed), message);
         public static string FolderMoveSkippedConflict(string newName) => Format(nameof(FolderMoveSkippedConflict), newName);

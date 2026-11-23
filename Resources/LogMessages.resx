@@ -170,7 +170,7 @@
     <value>対象アプリが選択されていません。</value>
   </data>
 
-  <!-- 画像フォルダ / 呼び名 -->
+  <!-- 画像フォルダ / 登録名 -->
   <data name="FolderMoved" xml:space="preserve">
     <value>画像フォルダを {0} から {1} へ移動しました。</value>
     <comment>{0}=旧名(整形済), {1}=新名(整形済)</comment>
@@ -184,7 +184,7 @@
     <comment>{0}=新名(整形済)</comment>
   </data>
   <data name="TargetRenamed" xml:space="preserve">
-    <value>呼び名を {0} から {1} に変更しました。</value>
+    <value>登録名を {0} から {1} に変更しました。</value>
     <comment>{0}=旧名(整形済), {1}=新名(整形済)</comment>
   </data>
 
